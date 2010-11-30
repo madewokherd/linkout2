@@ -1,0 +1,137 @@
+
+Design goals:
+ * The game engine is completely decoupled from the frontend. Or, in other words, the act of advancing from one frame to the next never calls application code, only internal code.
+ * Frames, once calculated, are immutable.
+ * The exact state of the game at any frame is serializable.
+ * The exact state of the game at any frame is hashable, and the resulting hash is the same regardless of the machine that calculates it.
+ * The state at each frame is fully determined by the state at the previous frame and a list of "external events" (thank you, Steve Yegge, for the excellent name) from the application. The most common example of an "external event" would likely be the buttons pressed by the user.
+ * All games can generate a full gameplay log (a "replay") including the state at the first frame, the list of external events between each frame, and the state of the last frame. The game engine can, given no other information, calculate all frames in the game, and verify that the last frame matches the one saved in the log.
+ * Once the first "stable" version is released, further versions shall never break a replay. That is, the final frame will always be the same given the same initial frame and external events. To ensure this, a test suite of replays will be run for each release.
+ * The "vocabulary" of objects that can exist in a frame's state is expressive enough to create a variety of action games but simple enough that it isn't used like a programming language. This means that an engine feature may be created specifically for only one game, because it's too complex to create from the existing words, and this is OK.
+ * Once the initial frame is created and assuming all external events are understood, error conditions should be very unlikely. That is, as long as the engine understands all elements in a frame and all external events, it should be able to calculate the next frame.
+ * It should be possible to program behaviors generally. For example, it should be possible to create multiple object types with an attribute of "friendly ammunition", which would generally damage enemies but not friendly characters. Instead of each type of enemy being programmed for each type of ammunition separately (or each type of ammunition being programmed for each type of enemy), enemies should respond generally to collisions of objects of that type.
+ * Situations in which multiple "solid" objects occupy the same spot, such as a character being embedded inside a wall, should be unlikely, but not impossible, in "natural" circumstances. This means that a moving object's entire path must be checked as it moves; situations where objects can pass through other objects because they are moving too fast are undesirable.
+ * However, in some cases it is desirable for an action to only occur AFTER an object has moved into the appropriate position. An example might be a type of brick that is fatal to a character ("lava"). It's reasonable for a platform to exist at the same height as the lava, and a character standing partially on that platform (and partially above the lava) should not be harmed.
+
+
+The most important concept to the linkout engine is a frame. In general, an application should only have to set up the first frame, inform the engine of external events based on the input it gets from the user(s), render each frame, and wait for the appropriate endgame condition (when it stops calculating new frames). Because each frame is determined fully by the previous frame and external events, a networked application can calculate new frames before it gets input from other users; once it receives input from other users', it can recalculate the more recent frames, taking the new input into account. Because each frame is hashable, a networked application can send hashes to peers and compare them to verify that all machines are synchronized.
+
+Each frame contains the following information:
+ * A general dictionary of 8-bit strings to atoms. An "atom" may be a fixed point number (with a 32-bit whole part and a 16-bit fractional part), an 8-bit string, the special value nil, or a "cons", which contains two references to atoms, named "car" and "cdr". This provides a good amount of flexibility while being easy to serialize and deserialize.
+ * A list of "objects". Each object has an ascii string type that has special meaning to the engine (if it doesn't, the engine will fail), and its own dictionary of ascii strings to atoms. The type determines how (and if) the engine does collision detection for the object. Each type may store its own set of data in addition to the dictionary, but this feature should be used sparingly, for cases where the data should be converted to an efficient internal representation. The most basic type is a "box", which occupies a rectangular region of the screen.
+ * A reference to an immutable dictionary of "object templates". Generally, this dictionary is shared by all frames in a game.
+ * Each object has a set of pixels, but these pixels may be calculated as needed. For example, a falling object will check what occupies the space below it before it moves into that space. It will do this by asking every object except itself what is in those pixels. Most objects will not yield any result (meaning those objects do not occupy that space), but those that do will yield, for each pixel they occupy, a dictionary of attributes and an x and y coordinate. The falling object may decide to stop if any of the pixels it encounters are "solid".
+ * A table of sprite collision masks. These masks have an arbitrary width and height, and each pixel in the sprite has a 32-bit integer identifying its pixel type.
+
+In general an application will create the first frame by starting with an empty frame and adding dictionary values and objects. Once everything the application wants has been added, it must "commit" the frame. Once a frame has been committed, its state can no longer be modified. Only "committed" frames can be serialized or hashed, and new frames can only be calculated based on committed frames. Newly-calculated frames are committed before they are returned to the application. If the application wants to modify a committed frame, it must first make a copy. Copies of frames can initially be modified.
+
+In order to calculate the next frame based on an existing frame, the engine will do the following:
+ * Create an internal copy of the frame.
+ * Apply each external event. Generally an external event will be a specific modification to the game state, such as deleting a specific object.
+ * For each object, in the reverse of the order the objects were added, call its specific update function. (Rationale: Some update functions will result in the creation of new objects. These new objects should not be updated until the NEXT frame, and the easiest way to ensure this is to enforce a general rule that newer objects are updated first. If no specific order were specified, different implementations could update the same frame and get a different result.)
+ * Commit the new frame.
+
+Should the engine ever be unable to calculate the next frame, it will return failure to the application. This document will refer to the failure to calculate the frame as "aborting". The nature of this failing result, and what information it includes, are unspecified.
+
+An application may ask for any the following types external events:
+ * Set a specific value in the general dictionary of atoms.
+ * Reset a specific value in the general dictionary.
+ * Destroy an existing object.
+ * Modify an existing object by setting or resetting a specific value in its dictionary, or by using a command specific to the object's type.
+ * Create a new object.
+
+While it's possible for an application to create gameplay rules by inspecting the state at each frame and deciding, based only on that state, on a set of external events to apply, this is not recommended. Gameplay rules should generally be enforced by objects that exist inside the game.
+
+A co-ordinate, by convention, is a cons of two integers. The first integer (the car) is the whole part of the co-ordinate in pixels (applications are not required to display the corresponding length as 1 pixel, but the size of the pixel determines the precision of collision detection). The second integer (the cdr) is the fractional part. It ranges from 0 to 65535. In general, an object placed at a specific pixel should have a fractional part of 32767, so that the whole part will be the same if the object moves slightly in any direction. I.e. the object should be placed in the center of the pixel rather than a corner.
+
+For serialization and deserialization, the engine uses a simplified version of scheme's syntax, not yet documented.
+
+The engine understands the following types:
+
+"BOX" type:
+ * An object of the "box" type occupies all pixels within the rectangular area determined by its "x", "y", "width", and "height" attributes. These pixels have the same set of attributes as the overall object, and they have a numerical type of 1.
+ * On each frame, the box's update function will evaluate the contents of its "OnUpdate" attribute, if present. The "current object" will be the box.
+
+"SPRITE" type:
+ * An object of the "sprite" type occupies a fixed set of pixels, with an offset determined by its "x" and "y" attributes.
+ * Each pixel occupied by a sprite has a positive integral numerical type. By convention, a pixel not occupied by the sprite has a numerical type of 0.
+ * The object theoretically has one dictionary of attributes for each positive integer (in practice, an engine may fail if a too-large dictionary index is used). The first dictionary is also the attributes dictionary of the entire object.
+ * The "id" value is a string key into the frame's dictionary of masks, and it determines the current sprite's size and mask. If the key is not in the frame's mask dictionary, the sprite occupies no pixels.
+ * On each frame, the sprite's update function will evaluate the contents of its "OnUpdate" attribute, if present.
+
+"TILEMAP" type:
+ * An object of the "tilemap" type is essentially a conglomerate of sprites. Its upper-left corner is defined by its "x" and "y" attributes. It has tilewidth and tileheight attributes that determine the size of a single tile (the fractional part of these values is IGNORED). Theoretically, the tilemap has enough storage for every pair of 32-bit x and y values, but in practice an engine may fail if abs(x*y) is too large.
+ * The object theoretically has one dictionary of attributes for each positive integer (in practice, an engine may fail if a too-large dictionary index is used). The first dictionary is also the attributes dictionary of the entire object.
+ * For each pair of 32-bit values, the tilemap stores a 32-bit integer. (A tilemap containing only 0's should in reality not occupy any memory, and a tilemap where all x and y coordinates are between, say, 0 and 3 inclusive, should probably occupy no more than 16 "slots" of memory.)
+ * For each pair of integers tx and ty, where the tilemap has stored a positive integer, that integer (and the tilemap's dictionary at that integer) determines the collision behavior of pixels where x is in the range [x + tx*tilewidth, x + (tx+1)*tilewidth) and y is in the range [y + ty*tileheight, y + (ty+1)*tileheight). (If tileheight or tilewidth is not positive, those ranges are empty.) The collision mask is determined by the "id" value of that dictionary. The pixel type of pixels in the collision mask is equal to the (truncated) value at the nth item in the list value stored as "treatas" in that dictionary, or the value stored in the tilemap if "treatas" is absent or does not have a number in the appropriate palce.
+ * On each frame, the tilemaps's update function will evaluate the contents of its "OnUpdate" attribute, if present.
+
+In order to evaluate an atom, the engine does the following:
+ * If the atom is not a cons, return that atom as is.
+ * If the car of the cons is not a string, return nil.
+ * If the car of the cons is a string that the engine does not recognize, abort. (Rationale: New versions may include new commands. When old versions encounter these commands, they should report a sensible error saying that the engine is too old, rather than fail later in a strange way because some command was missing.)
+ * If the car of the cons is a recognized string, follow the instructions below. The cdr of the cons will be referred to below as the "arguments".
+
+The engine supports the following commands:
+ * begin - If the arguments are not a cons, return nil. Evaluate the car of the arguments. Do the same recursively for the cdr of the arguments (i.e. evaluate the car of the cdr and repeat for the cdr of the cdr). If the cdr is not a cons, return the result of the last thing evaluated. If nothing is evaluated, return nil. (Explanatory text: This is similar to the "begin" statement in scheme; it makes it possible to execute a list of commands in sequence.)
+ * or - If the arguments are not a cons, return nil. Evaluate the car of the arguments. If the result is anything other than 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of the arguments.
+ * and - If the arguments are not a cons, return nil. Evaluate the car of the arguments. If the result is 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of the arguments.
+ * if - If the arguments are not a cons, return nil. Evaluate the car of the arguments. If the cdr of the arguments is not a cons, return nil (AFTER evaluating the car). If the result is anything other than 0 or nil, return the result of evaluating the car of the cdr of the arguments. Otherwise, return the result of evaluating the car of the cdr of the cdr of the arguments, or nil if the cdr of the cdr of the arguments is not a cons.
+ * eval - Return the result of evaluating the car of the arguments twice, or nil if the arguments is not a cons.
+ * getglobal - If the car of the arguments is a string, and it is a key in the global dictionary, return the corresponding value. Otherwise, return nil.
+ * setglobal - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the global dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
+ * delglobal - If the car of the arguments is a string, and it is a key in the global dictionary, remove it from the global dictionary. Always return nil.
+ * getown - If the car of the arguments is a string, and it is a key in the current object's dictionary, return the corresponding value. Otherwise, return nil.
+ * setown - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the current object's dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
+ * delown - If the car of the arguments is a string, and it is a key in the current object's dictionary, remove it from the current object's dictionary. Always return nil.
+ * getother - If the car of the arguments is a string, and it is a key in the other object's dictionary, return the corresponding value. Otherwise, return nil.
+ * setother - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the current other's dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
+ * delother - If the car of the arguments is a string, and it is a key in the other object's dictionary, remove it from the other object's dictionary. Always return nil.
+ * (check x y width height ownfound otherfound) - Query the engine for a set of pixels in the given rectangle that are occupied by other objects. For each group of pixels, evaluate ownfound and (getother otherfound).
+ * (checkself x y width height found) - Query the engine for a set of pixels in the given rectangle that are occupied by the current object. For each group found, evaluate found.
+ * (checkother x y width height found) - Query the engine for a set of pixels in the given rectangle that are occupied by the other object. For each group found, evaluate found. (When found is evaluated, the definition of the current object and other object will not change.)
+ * (updatepos ownbeforecollide ownaftercollide otherbeforeupdate otheraftercollide) - While the current object's mdx and mdy variables are not equal to 0, update the current object's position, in steps up to as large as one pixel, by repeating the following steps. If mdx is greater than 0, calculate the lesser of 1 or mdx to the object's x position, which will henceforth be referred to as the "step". Subtract the step from mdx. If adding the step to x would change the whole part of x, query the engine for a set of pixels that are occupied by other objects and are in the space that the object would newly occupy or would occupy with a different type of pixel. For each group of pixels, evaluate ownbeforecollide and (getother otherbeforecollide). If none of the evaluated code has called (stop) or marked the current object for destruction, update the x coordinate and call ownaftercollide and (getother otheraftercollide) for the same group of pixels (i.e. do NOT check for collisions again, meaning that the "after" functions are called if and only if the "before" function is called and the object moves). If mdx is negative, use a negative step instead. If mdx is 0 and mdy is non-zero, go through a similar procedure with y co-ordinates instead. Repeat until both mdx and mdy are 0.
+ * getownpixeltype - When called from within a collision function, return the pixel type number of the group of pixels in the current object being checked. Return nil if this is nonsensical.
+ * getotherpixeltype - When called from within a collision function, return the pixel type number of the group of pixels in the other object being checked. Return nil if this is nonsensical.
+ * (getownpixel n string) - Return the value corresponding to the given key in the current object's nth pixel dictionary. Return nil.
+ * (setownpixel n string value) - Set the value corresponding to the given key in the current object's nth pixel dictionary. Return nil.
+ * (delownpixel n string) - Reset the value corresponding to the given key in the current object's nth pixel dictionary. Return nil.
+ * getotherpixel, setotherpixel, delotherpixel - Same as *ownpixel, but use the other object instead.
+ * iammoving - When called in the context of code evaluated by check, checkself, or updatepos, return 1 if the code being evaluated was passed to that command as "own" code (as opposed to "other" code). Otherwise, return 0.
+ * (stop) - When evaluated before a collision, prevent the object that would move from moving. Return nil.
+ * die - Mark the current object for destruction. Objects that are marked for destruction return no pixels for collision detection purposes, and move commands behave as if their dx and dy attributes are 0. The object will be destroyed when the engine is no longer evaluating code.
+ * kill - Mark the other object for destruction. Objects that are marked for destruction return no pixels for collision detection purposes, and move commands behave as if their dx and dy attributes are 0. The object will be destroyed when the engine is no longer evaluating code.
+ * Arithmetic operators + and * evaluate the arguments and add or multiply the cars respectively, until they encounter a cdr that is not a cons, or a car that is not a number. (A "number" in this case means either an integer or a cons of two integers. An integer will be treated as a cons of itself and 0. The car will be regarded as the whole part of the number, and the cdr will be regarded as a fractional part out of 65536, per the convention.) If they do not add or multiply any numbers, they return 0 and 1 respectively.
+ * Arithmetic operators - / and % expect two numerical arguments (the car and the car of the cdr of the evaluated arguments). If one of those arguments does not exist or is not a number, they return nil. Otherwise, they are subtraction, division, and modulo respectively. Division rounds down (rather than towards 0 as many programming languages with integer arithmetic do), and the result of modulo is never negative (again, contrary to many programming languages).
+ * Boolean operators <, >, <=, and >= expect two numerical arguments. They return 1 if the specified relationship is satisfied and 0 if it is not.
+ * The boolean operator = returns 1 if the two values are equal and 0 if they are not. For a cons, being equal means that both the car and the cdr are equal. If a cons is recursive, it is not equal to anything, including itself.
+ * cons - Return a cons of the two given evaluated arguments.
+ * car - Returns the car of the given cons, or nil if that's impossible.
+ * cdr - Returns the cdr of the given cons, or nil if that's impossible.
+ * sin, cos, tan, asin, acos, tan - TBD trig functions. (The results will have to be specified exactly.)
+
+Applications may choose to implement macro expansion. This is not part of the engine, and macros will be completely absent from game state and from replays. Nonetheless, here is a set of standard macros:
+
+(macro (move)
+  (begin
+    (setown mdx (getown dx))
+    (setown mdy (getown dy))
+    (updatepos (getown BeforeCollide) (getown AfterCollide) BeforeCollide AfterCollide)))
+
+(macro (hard-stop)
+  (begin
+    (if (iammoving)
+        (begin (setown mdx 0) (setown mdy 0))
+        (begin (setother mdx 0) (setother mdy 0)))
+    (stop)))
+
+(macro (gravity)
+ (begin
+   (setown dx (+ (getown dx) (getglobal gravity_ax)))
+   (setown dy (+ (getown dy) (getglobal gravity_ay)))))
+
+(macro (gravity multiplier)
+ (begin
+   (setown dx (+ (getown dx) (* (getglobal gravity_ax) multiplier)))
+   (setown dy (+ (getown dy) (* (getglobal gravity_ay) multiplier)))))
+
