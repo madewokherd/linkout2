@@ -15,7 +15,7 @@ namespace Linkout.Lisp
 			return this.int_value;
 		}
 
-		public override string get_string()
+		public override byte[] get_string()
 		{
 			throw new NotSupportedException();
 		}

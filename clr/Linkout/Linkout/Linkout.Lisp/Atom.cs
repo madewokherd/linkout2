@@ -12,7 +12,7 @@ namespace Linkout.Lisp
 
 		public abstract Int64 get_fixedpoint();
 
-		public abstract string get_string();
+		public abstract byte[] get_string();
 		
 		public abstract Atom get_car();
 

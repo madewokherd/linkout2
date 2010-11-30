@@ -3,9 +3,9 @@ namespace Linkout.Lisp
 {
 	public class StringAtom : Atom
 	{
-		public readonly string string_value;
+		public readonly byte[] string_value;
 		
-		public StringAtom (string string_value) : base(AtomType.String)
+		public StringAtom (byte[] string_value) : base(AtomType.String)
 		{
 			this.string_value = string_value;
 		}
@@ -15,7 +15,7 @@ namespace Linkout.Lisp
 			throw new NotSupportedException();
 		}
 
-		public override string get_string()
+		public override byte[] get_string()
 		{
 			return this.string_value;
 		}

@@ -17,7 +17,7 @@ namespace Linkout.Lisp
 			throw new NotSupportedException();
 		}
 
-		public override string get_string()
+		public override byte[] get_string()
 		{
 			throw new NotSupportedException();
 		}
