@@ -51,7 +51,7 @@ namespace Linkout.Lisp
 			}
 			else if (close_paren)
 			{
-				return result;
+				return new ConsAtom(result, NilAtom.nil);
 			}
 			else
 			{
@@ -168,6 +168,10 @@ namespace Linkout.Lisp
 						throw new ArgumentException("invalid syntax");
 					
 					whole_part = whole_part * number_base + digit;
+
+					current_byte = input.ReadByte();
+					if (current_byte == -1)
+						throw new System.IO.EndOfStreamException();
 				}
 				
 				if (current_byte == ')')
