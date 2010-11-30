@@ -29,6 +29,11 @@ namespace Linkout.Lisp
 		{
 			throw new NotSupportedException();
 		}
+	
+		public override void to_stream (System.IO.Stream output)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }
 

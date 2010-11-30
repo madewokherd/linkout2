@@ -29,5 +29,43 @@ namespace Linkout.Lisp
 		{
 			throw new NotSupportedException();
 		}
+	
+		private bool is_simple_literal()
+		{
+			int i;
+			if ((this.string_value[0] < 'a' || this.string_value[0] > 'z') &&
+			    (this.string_value[0] < 'A' || this.string_value[0] > 'Z') &&
+			    this.string_value[0] != '+' && this.string_value[0] != '-' &&
+			    this.string_value[0] != '*' && this.string_value[0] != '/' && this.string_value[0] != '%' &&
+			    this.string_value[0] != '<' && this.string_value[0] != '>' && this.string_value[0] != '=')
+				return false;
+			for (i=0; i<this.string_value.Length; i++)
+			{
+				if (this.string_value[i] <= 32 || this.string_value[i] == 41 /* ) */)
+					return false;
+			}
+			return true;
+		}
+		
+		public override void to_stream (System.IO.Stream output)
+		{
+			if (this.string_value.Length <= 127 && is_simple_literal())
+			{
+				output.Write(this.string_value, 0, this.string_value.Length);
+			}
+			else
+			{
+				/* TODO: Define and use a compressed literal syntax. */
+				int i;
+				output.WriteByte(34); /* " */
+				for (i=0; i<this.string_value.Length; i++)
+				{
+					if (this.string_value[i] == 92 /* \ */ || this.string_value[i] == 34 /* " */)
+						output.WriteByte(92);
+					output.WriteByte(this.string_value[i]);
+				}
+				output.WriteByte(34); /* " */
+			}
+		}
 	}
 }

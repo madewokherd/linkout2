@@ -31,5 +31,33 @@ namespace Linkout.Lisp
 		{
 			return this.cdr;
 		}
+
+		private static void write_tail (System.IO.Stream output, Atom atom)
+		{
+			if (atom.atomtype == AtomType.Cons)
+			{
+				ConsAtom cons = (ConsAtom)atom;
+				output.WriteByte(32);
+				cons.car.to_stream(output);
+				write_tail(output, cons.cdr);
+			}
+			else if (atom.atomtype == AtomType.Nil)
+				return;
+			else
+			{
+				output.WriteByte(32);
+				output.WriteByte(46); /* . */
+				output.WriteByte(32);
+				atom.to_stream(output);
+			}
+		}
+		
+		public override void to_stream (System.IO.Stream output)
+		{
+			output.WriteByte(40); /* ( */
+			car.to_stream(output);
+			write_tail(output, cdr);
+			output.WriteByte(41); /* ) */
+		}
 	}
 }

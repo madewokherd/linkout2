@@ -9,7 +9,7 @@ namespace Linkout.Lisp
 
 		private static readonly NilAtom nil_singleton = new NilAtom();
 		
-		public NilAtom nil
+		public static NilAtom nil
 		{
 			get
 			{
@@ -35,6 +35,13 @@ namespace Linkout.Lisp
 		public override Atom get_cdr()
 		{
 			throw new NotSupportedException();
+		}
+
+		private readonly byte[] nil_str = {40, 41}; // ()
+		
+		public override void to_stream (System.IO.Stream output)
+		{
+			output.Write(nil_str, 0, 2);
 		}
 	}
 }

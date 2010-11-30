@@ -22,13 +22,14 @@ namespace LinkoutConsole
 		public static int Execute (string[] args, System.IO.Stream input)
 		{
 			// For now, just deserialize so we can test the parsing code
+			System.IO.Stream output = System.Console.OpenStandardOutput();
 			try
 			{
 				while (true)
 				{
 					Linkout.Lisp.Atom atom;
 					atom = Linkout.Lisp.Atom.from_stream(input);
-					System.Console.WriteLine(atom.atomtype);
+					atom.write_to_stream(output);
 				}
 			}
 			catch (System.IO.EndOfStreamException)
