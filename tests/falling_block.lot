@@ -1,0 +1,26 @@
+LINKOUT_REPLAY
+
+(begin-frame)
+
+(box (x 0)
+     (y 0)
+     (width 5)
+     (height 5)
+     (OnFrame (setown y (+ (getown y) 1))))
+
+(end-frame)
+
+
+(advance 10)
+
+
+(begin-frame)
+
+(box (x 10)
+     (y 0)
+     (width 5)
+     (height 5)
+     (OnFrame (setown y (+ (getown y) 1))))
+
+(end-frame)
+
