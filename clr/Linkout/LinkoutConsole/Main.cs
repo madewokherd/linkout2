@@ -1,4 +1,5 @@
 using System;
+using Linkout;
 
 namespace LinkoutConsole
 {
@@ -20,6 +21,19 @@ namespace LinkoutConsole
 		
 		public static int Execute (string[] args, System.IO.Stream input)
 		{
+			// For now, just deserialize so we can test the parsing code
+			try
+			{
+				while (true)
+				{
+					Linkout.Lisp.Atom atom;
+					atom = Linkout.Lisp.Atom.from_stream(input);
+					System.Console.WriteLine(atom.atomtype);
+				}
+			}
+			catch (System.IO.EndOfStreamException)
+			{
+			}
 			return 0;
 		}
 		
