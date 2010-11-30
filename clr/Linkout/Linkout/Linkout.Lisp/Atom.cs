@@ -10,7 +10,7 @@ namespace Linkout.Lisp
 			this.atomtype = atomtype;
 		}
 
-		public abstract Int64 get_fixedpoint();
+		public abstract long get_fixedpoint();
 
 		public abstract byte[] get_string();
 		
@@ -128,6 +128,61 @@ namespace Linkout.Lisp
 				}
 				
 				return new StringAtom(result.ToArray());
+			}
+			else if (current_byte >= '0' && current_byte <= '9')
+			{
+				int whole_part=current_byte - 48 /* '0' */;
+				int number_base = 10;
+
+				current_byte = input.ReadByte();
+				if (current_byte == -1)
+					throw new System.IO.EndOfStreamException();
+		
+				if (current_byte == ')')
+				{
+					close_paren = true;
+					return new FixedPointAtom(whole_part << 16);
+				}
+				
+				if (whole_part == 0 && current_byte == 'x')
+				{
+					number_base = 16;
+					current_byte = input.ReadByte();
+					if (current_byte == -1)
+						throw new System.IO.EndOfStreamException();
+				}
+
+				while ((current_byte >= '0' && current_byte <= '9') ||
+				       (current_byte >= 'a' && current_byte <= 'z') ||
+				       (current_byte >= 'A' && current_byte <= 'Z'))
+				{
+					int digit;
+					if (current_byte >= '0' && current_byte <= '9')
+						digit = current_byte - 48 /* '0' */;
+					else if (current_byte >= 'a' && current_byte <= 'z')
+						digit = current_byte - 97 /* a */ + 10;
+					else /* (current_byte >= 'A' && current_byte <= 'Z') */
+						digit = current_byte - 65 /* a */ + 10;
+					
+					if (digit >= number_base)
+						throw new ArgumentException("invalid syntax");
+					
+					whole_part = whole_part * number_base + digit;
+				}
+				
+				if (current_byte == ')')
+				{
+					close_paren = true;
+					return new FixedPointAtom(whole_part << 16);
+				}
+				
+				if (current_byte == 32 || current_byte == 9 || current_byte == 10 || current_byte == 13)
+					return new FixedPointAtom(whole_part << 16);
+			
+				if (current_byte == 46 /* . */)
+					throw new NotImplementedException ();
+				
+				throw new ArgumentException("invalid syntax");
 			}
 			else if (current_byte == 40 /* ( */)
 			{

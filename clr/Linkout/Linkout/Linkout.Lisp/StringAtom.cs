@@ -10,7 +10,7 @@ namespace Linkout.Lisp
 			this.string_value = string_value;
 		}
 
-		public override Int64 get_fixedpoint()
+		public override long get_fixedpoint()
 		{
 			throw new NotSupportedException();
 		}

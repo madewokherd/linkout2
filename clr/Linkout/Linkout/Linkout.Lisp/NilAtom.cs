@@ -17,7 +17,7 @@ namespace Linkout.Lisp
 			}
 		}
 
-		public override Int64 get_fixedpoint()
+		public override long get_fixedpoint()
 		{
 			throw new NotSupportedException();
 		}
