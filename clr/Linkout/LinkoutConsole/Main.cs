@@ -10,7 +10,7 @@ namespace LinkoutConsole
 @"Usage: linkout <command> [<switches>] [<filename>]
 
 <commands>
-  e: Evaluate a script or replay and write out the final frame
+  e: Execute a script or replay and write out the final frame
 
 <switches>
   -si: Read data from stdin
@@ -18,10 +18,49 @@ namespace LinkoutConsole
 			return 1;
 		}
 		
+		public static int Execute (string[] args, System.IO.Stream input)
+		{
+			return 0;
+		}
+		
 		public static int Main (string[] args)
 		{
+			int i;
+			bool stdin = false;
+			string filename = null;
+			System.IO.Stream input = null;
+			
 			if (args.Length == 0)
 				return Usage();
+
+			for (i=1; i<args.Length; i++)
+			{
+				if (args[i] == "-si")
+					stdin = true;
+				else if (args[i].StartsWith("-"))
+				{
+					Console.WriteLine(String.Format("linkout: invalid option %s", args[i]));
+					return Usage();
+				}
+				else if (filename == null)
+				{
+					filename = args[i];
+				}
+				else
+				{
+					Console.WriteLine(String.Format("linkout: unexpected argument %s", args[i]));
+					return Usage();
+				}
+			}
+			
+			if (stdin)
+				input = System.Console.OpenStandardInput();
+			else if (filename != null)
+				input = System.IO.File.OpenRead(filename);
+			
+			if (args[0] == "e")
+				return Execute(args, input);
+			
 			return Usage();
 		}
 	}
