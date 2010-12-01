@@ -244,6 +244,16 @@ namespace Linkout.Lisp
 			to_stream(output);
 			output.WriteByte(10);
 		}
+		
+		public override string ToString ()
+		{
+			System.IO.MemoryStream stream = new System.IO.MemoryStream();
+			System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding(false, false);
+			
+			to_stream(stream);
+			
+			return encoding.GetString(stream.GetBuffer());
+		}
 	}
 }
 

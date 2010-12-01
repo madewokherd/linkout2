@@ -10,6 +10,12 @@ namespace Linkout.Lisp
 			this.string_value = string_value;
 		}
 
+		public StringAtom (string string_value) : base(AtomType.String)
+		{
+			System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
+			this.string_value = encoding.GetBytes(string_value);
+		}
+
 		public override long get_fixedpoint()
 		{
 			throw new NotSupportedException();
@@ -30,6 +36,28 @@ namespace Linkout.Lisp
 			throw new NotSupportedException();
 		}
 	
+		public override bool Equals (object obj)
+		{
+			int i;
+			if (obj.GetType() != this.GetType())
+				return false;
+			StringAtom oth = (StringAtom)obj;
+			if (this.string_value.Length != oth.string_value.Length)
+				return false;
+			for (i=0; i<this.string_value.Length; i++)
+				if (this.string_value[i] != oth.string_value[i])
+					return false;
+			return true;
+		}
+		
+		public override int GetHashCode ()
+		{
+			int result = 86, i;
+			for (i=0; i<this.string_value.Length; i++)
+				result = result * 33 + i;
+			return result;
+		}
+		
 		private bool is_simple_literal()
 		{
 			int i;

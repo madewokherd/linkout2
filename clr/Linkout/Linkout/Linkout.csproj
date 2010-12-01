@@ -40,6 +40,10 @@
     <Compile Include="Linkout.Lisp\FixedPointAtom.cs" />
     <Compile Include="Linkout.Lisp\StringAtom.cs" />
     <Compile Include="Linkout.Lisp\ConsAtom.cs" />
+    <Compile Include="GameObject.cs" />
+    <Compile Include="Box.cs" />
+    <Compile Include="Linkout.Lisp\Interpreter.cs" />
+    <Compile Include="Linkout.Lisp\Locals.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

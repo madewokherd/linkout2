@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 namespace Linkout.Lisp
 {
 	public sealed class NilAtom : Atom
@@ -37,6 +38,11 @@ namespace Linkout.Lisp
 			throw new NotSupportedException();
 		}
 
+		public override int GetHashCode ()
+		{
+			return 13;
+		}
+		
 		private readonly byte[] nil_str = {40, 41}; // ()
 		
 		public override void to_stream (System.IO.Stream output)

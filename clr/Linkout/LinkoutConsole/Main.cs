@@ -23,12 +23,15 @@ namespace LinkoutConsole
 		{
 			// For now, just deserialize so we can test the parsing code
 			System.IO.Stream output = System.Console.OpenStandardOutput();
+			Linkout.Lisp.Interpreter interpreter = new Linkout.Lisp.Interpreter();
+			Linkout.Lisp.Locals no_locals = new Linkout.Lisp.Locals();
 			try
 			{
 				while (true)
 				{
 					Linkout.Lisp.Atom atom;
 					atom = Linkout.Lisp.Atom.from_stream(input);
+					atom = interpreter.eval(atom, no_locals);
 					atom.write_to_stream(output);
 				}
 			}

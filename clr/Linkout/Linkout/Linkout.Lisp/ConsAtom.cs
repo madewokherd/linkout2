@@ -32,6 +32,19 @@ namespace Linkout.Lisp
 			return this.cdr;
 		}
 
+		public override bool Equals (object obj)
+		{
+			if (obj.GetType() != this.GetType())
+				return false;
+			ConsAtom oth = (ConsAtom)obj;
+			return this.car.Equals(oth.car) && this.cdr.Equals(oth.cdr);
+		}
+		
+		public override int GetHashCode ()
+		{
+			return (this.car.GetHashCode() * 17) + this.cdr.GetHashCode();
+		}
+		
 		private static void write_tail (System.IO.Stream output, Atom atom)
 		{
 			if (atom.atomtype == AtomType.Cons)
