@@ -3,35 +3,54 @@ Design goals:
  * The game engine is completely decoupled from the frontend. Or, in other words, the act of advancing from one frame to the next never calls application code, only internal code.
  * Frames, once calculated, are immutable.
  * The exact state of the game at any frame is serializable.
- * The exact state of the game at any frame is hashable, and the resulting hash is the same regardless of the machine that calculates it.
- * The state at each frame is fully determined by the state at the previous frame and a list of "external events" (thank you, Steve Yegge, for the excellent name) from the application. The most common example of an "external event" would likely be the buttons pressed by the user.
+ * The exact state of the game at any frame is hashable, and the resulting hash is the same regardless of the machine or engine version that calculates it.
+ * The state at each frame is fully determined by the state at the previous frame and a list of "external events" from the application. The most common example of an "external event" would likely be the buttons pressed by the user.
  * All games can generate a full gameplay log (a "replay") including the state at the first frame, the list of external events between each frame, and the state of the last frame. The game engine can, given no other information, calculate all frames in the game, and verify that the last frame matches the one saved in the log.
- * Once the first "stable" version is released, further versions shall never break a replay. That is, the final frame will always be the same given the same initial frame and external events. To ensure this, a test suite of replays will be run for each release.
- * The "vocabulary" of objects that can exist in a frame's state is expressive enough to create a variety of action games but simple enough that it isn't used like a programming language. This means that an engine feature may be created specifically for only one game, because it's too complex to create from the existing words, and this is OK.
- * Once the initial frame is created and assuming all external events are understood, error conditions should be very unlikely. That is, as long as the engine understands all elements in a frame and all external events, it should be able to calculate the next frame.
+ * Once the first "stable" version is released, further versions shall never break a replay. That is, the final frame will always be the same given the same initial frame and external events. To ensure this, a test suite of replays will be run before each release.
+ * The "vocabulary" of objects that can exist in a frame's state is expressive enough to create a variety of action games but probably not quite expressive enough to be useful as a general-purpose programming language.
+ * Once the initial frame is created and assuming all external events are understood, error conditions should be very unlikely. That is, as long as the engine understands all elements in a frame and all external events, it should be able to calculate the next frame. This means we prefer to continue with glitches when the program does something that's probably wrong, rather than abort. (Glitches are more fun anyway. :)
  * It should be possible to program behaviors generally. For example, it should be possible to create multiple object types with an attribute of "friendly ammunition", which would generally damage enemies but not friendly characters. Instead of each type of enemy being programmed for each type of ammunition separately (or each type of ammunition being programmed for each type of enemy), enemies should respond generally to collisions of objects of that type.
  * Situations in which multiple "solid" objects occupy the same spot, such as a character being embedded inside a wall, should be unlikely, but not impossible, in "natural" circumstances. This means that a moving object's entire path must be checked as it moves; situations where objects can pass through other objects because they are moving too fast are undesirable.
  * However, in some cases it is desirable for an action to only occur AFTER an object has moved into the appropriate position. An example might be a type of brick that is fatal to a character ("lava"). It's reasonable for a platform to exist at the same height as the lava, and a character standing partially on that platform (and partially above the lava) should not be harmed.
+ * Presentation and input methods should be independent of all game logic. However, "hints" may be embedded in the program that suggest how the scene should be rendered and what input is expected.
 
 
-The most important concept to the linkout engine is a frame. In general, an application should only have to set up the first frame, inform the engine of external events based on the input it gets from the user(s), render each frame, and wait for the appropriate endgame condition (when it stops calculating new frames). Because each frame is determined fully by the previous frame and external events, a networked application can calculate new frames before it gets input from other users; once it receives input from other users', it can recalculate the more recent frames, taking the new input into account. Because each frame is hashable, a networked application can send hashes to peers and compare them to verify that all machines are synchronized.
+The most important concept to the linkout engine is a frame.
+All gameplay logic is embedded inside each frame.
+In other words, a frame is not only the full state of the game at a specific instant but also a program that calculates the next frame.
+Applications will generally create the first frame by running a program in a language to be described below.
+Once the first frame is created, the application should periodically ask the engine to calculate new frames, which it then displays.
+The process of creating the first frame, and the process of calculating new frames, will generate events called "hints", which the application is free to use or ignore.
+Typical first frame hints will inform the application of the expected input events and of how certain sets of objects should be rendered.
+Events created from calculating frames might inform the application that the game has ended, and whether the player has won or lost.
+When an application requests the calculation of new frames, it also includes a set of "external events" that modify the game state.
+Typically, external events are used to inform the frame of user input, but in principle they can be used to make any kind of change to the game state.
+External events are the only opportunity the application has to change the frame state once the game has begun.
+This is to prevent applications from embedding gameplay logic in their own code, ensuring that each frame can be calculated strictly based on the previous frame and a known set of external events.
+
+The meaning of "hints" and "external events" are determined by the application, and an application is free to ignore them completely, or modify the game with impunity.
+A set of conventional meanings for "hints" and "external events" will be included in this document.
 
 Each frame contains the following information:
- * A general dictionary of 8-bit strings to atoms. An "atom" may be a fixed point number (with a 32-bit whole part and a 16-bit fractional part), an 8-bit string, the special value nil, or a "cons", which contains two references to atoms, named "car" and "cdr". This provides a good amount of flexibility while being easy to serialize and deserialize.
- * A list of "objects". Each object has an ascii string type that has special meaning to the engine (if it doesn't, the engine will fail), and its own dictionary of ascii strings to atoms. The type determines how (and if) the engine does collision detection for the object. Each type may store its own set of data in addition to the dictionary, but this feature should be used sparingly, for cases where the data should be converted to an efficient internal representation. The most basic type is a "box", which occupies a rectangular region of the screen.
- * A reference to an immutable dictionary of "object templates". Generally, this dictionary is shared by all frames in a game.
- * Each object has a set of pixels, but these pixels may be calculated as needed. For example, a falling object will check what occupies the space below it before it moves into that space. It will do this by asking every object except itself what is in those pixels. Most objects will not yield any result (meaning those objects do not occupy that space), but those that do will yield, for each pixel they occupy, a dictionary of attributes and an x and y coordinate. The falling object may decide to stop if any of the pixels it encounters are "solid".
+ * A set of user-defined functions. This set is determined at the creation of the first frame and cannot be modified later.
+ * A frame number. Typically, the first frame will be 0, but an application may create an initial frame with a different number. This may be useful to implement a save/resume feature.
+ * A random seed.
+ * A general dictionary of atoms to atoms. An "atom" may be a fixed point number (with a 32-bit whole part and a 16-bit fractional part), an 8-bit string, the special value nil, or a "cons", which contains two references to atoms, named "car" and "cdr". This provides a good amount of flexibility while being easy to serialize and deserialize.
+ * A list of "objects". Each object has an ascii string type that has special meaning to the engine (if it doesn't, the engine will fail), and its own dictionary of ascii strings to atoms. The type determines how (and if) the engine does collision detection for the object. Each type may store its own set of data in addition to the dictionary. The most basic type is a "box", which occupies a rectangular region of the screen.
+ * Each object has a set of pixels, but these pixels may be calculated as needed. For example, a falling object will check what occupies the space below it before it moves into that space. It will do this by asking every object except itself what is in those pixels. Most objects will not yield any result (meaning those objects do not occupy that space), but those that do will yield, for each pixel they occupy, an atom and an x and y coordinate. The falling object may decide to stop if any of the pixels it encounters are "solid", where the definition of solid depends on the program.
  * A table of sprite collision masks. These masks have an arbitrary width and height, and each pixel in the sprite has a 32-bit integer identifying its pixel type.
-
-In general an application will create the first frame by starting with an empty frame and adding dictionary values and objects. Once everything the application wants has been added, it must "commit" the frame. Once a frame has been committed, its state can no longer be modified. Only "committed" frames can be serialized or hashed, and new frames can only be calculated based on committed frames. Newly-calculated frames are committed before they are returned to the application. If the application wants to modify a committed frame, it must first make a copy. Copies of frames can initially be modified.
 
 In order to calculate the next frame based on an existing frame, the engine will do the following:
  * Create an internal copy of the frame.
  * Apply each external event. Generally an external event will be a specific modification to the game state, such as deleting a specific object.
- * For each object, in the reverse of the order the objects were added, call its specific update function. (Rationale: Some update functions will result in the creation of new objects. These new objects should not be updated until the NEXT frame, and the easiest way to ensure this is to enforce a general rule that newer objects are updated first. If no specific order were specified, different implementations could update the same frame and get a different result.)
+ * Execute the code in the global "BeforeUpdate" attribute.
+ * For each object, in the reverse of the order the objects were added, execute the code in the object's OnFrame attribute. (Rationale: Some update functions will result in the creation of new objects. These new objects should not be updated until the NEXT frame, and the easiest way to ensure this is to enforce a general rule that newer objects are updated first. If no specific order were specified, different implementations could update the same frame and get a different result.)
+ * Execute the code in the global "AfterUpdate" attribute.
  * Commit the new frame.
 
-Should the engine ever be unable to calculate the next frame, it will return failure to the application. This document will refer to the failure to calculate the frame as "aborting". The nature of this failing result, and what information it includes, are unspecified.
+Should the engine ever be unable to calculate the next frame, it will return failure to the application.
+This document will refer to the failure to calculate the frame as "aborting".
+The nature of this failing result, and what information it includes, are unspecified.
 
 An application may ask for any the following types external events:
  * Set a specific value in the general dictionary of atoms.
@@ -40,31 +59,39 @@ An application may ask for any the following types external events:
  * Modify an existing object by setting or resetting a specific value in its dictionary, or by using a command specific to the object's type.
  * Create a new object.
 
-While it's possible for an application to create gameplay rules by inspecting the state at each frame and deciding, based only on that state, on a set of external events to apply, this is not recommended. Gameplay rules should generally be enforced by objects that exist inside the game.
+While it's possible for an application to create gameplay rules by inspecting the state at each frame and deciding, based only on that state, on a set of external events to apply, this is not recommended.
+Gameplay rules should be enforced by objects that exist inside the game.
 
-A co-ordinate, by convention, is a cons of two integers. The first integer (the car) is the whole part of the co-ordinate in pixels (applications are not required to display the corresponding length as 1 pixel, but the size of the pixel determines the precision of collision detection). The second integer (the cdr) is the fractional part. It ranges from 0 to 65535. In general, an object placed at a specific pixel should have a fractional part of 32767, so that the whole part will be the same if the object moves slightly in any direction. I.e. the object should be placed in the center of the pixel rather than a corner.
+Lot, the language in which games and frames will be authored, is similar to scheme.
+Objects in this language are called "atoms".
+An atom may be any of the following types:
+ * Nil. The nil type has only one possible value, called nil, represented in the language as ().
+ * String. Strings are 8-bit. The string encoding utf8 by convention, but the language does not guarantee this. If a string starts with an alphanumeric character, or one of the ascii characters +-*/%<>=, and it does not contain whitespace, or a close parenthesis, it may be represented as its contents in lot. Otherwise, it should be represented as a double-quoted string with backslash acting as an escape character.
+ * Number. These are 48-bit values, where the least significant 16 bits are the fractional part. They may be represented as decimal numbers, or hex if prefixed with 0x. In both cases, the . character separates the whole part from the fractional part.
+ * Cons. A cons is a reference to two other atoms of any type. The first atom referenced is called the "car" and the second is called the "cdr". A cons may be represented as (car . cdr). Like in scheme, a cons may be used to create a linked list something like (a . (b . (c . ()))). Also, like scheme, the previous expression can be written as (a b c).
+
+Atoms are immutable, and a cons can never be recursive.
+
+A co-ordinate, by convention, is a cons of two numbers.
+In general, an object placed at a specific pixel should have a fractional part of 32768 (or one half), so that the whole part will be the same if the object moves slightly in any direction.
+In other words, the object should be placed in the center of the pixel rather than a corner.
 
 For serialization and deserialization, the engine uses a simplified version of scheme's syntax, not yet documented.
 
 The engine understands the following types:
 
-"BOX" type:
- * An object of the "box" type occupies all pixels within the rectangular area determined by its "x", "y", "width", and "height" attributes. These pixels have the same set of attributes as the overall object, and they have a numerical type of 1.
- * On each frame, the box's update function will evaluate the contents of its "OnUpdate" attribute, if present. The "current object" will be the box.
+"box" type:
+ * An object of the "box" type occupies all pixels within the rectangular area determined by its "x", "y", "width", and "height" attributes. These pixels have a type of nil.
 
-"SPRITE" type:
+"sprite" type:
  * An object of the "sprite" type occupies a fixed set of pixels, with an offset determined by its "x" and "y" attributes.
- * Each pixel occupied by a sprite has a positive integral numerical type. By convention, a pixel not occupied by the sprite has a numerical type of 0.
- * The object theoretically has one dictionary of attributes for each positive integer (in practice, an engine may fail if a too-large dictionary index is used). The first dictionary is also the attributes dictionary of the entire object.
  * The "id" value is a string key into the frame's dictionary of masks, and it determines the current sprite's size and mask. If the key is not in the frame's mask dictionary, the sprite occupies no pixels.
- * On each frame, the sprite's update function will evaluate the contents of its "OnUpdate" attribute, if present.
+ * For each pixel with a non-zero value stored in the mask, the sprite occupies a pixel with a type of (m), where m is the value stored in the mask.
 
-"TILEMAP" type:
+"tilemap" type:
  * An object of the "tilemap" type is essentially a conglomerate of sprites. Its upper-left corner is defined by its "x" and "y" attributes. It has tilewidth and tileheight attributes that determine the size of a single tile (the fractional part of these values is IGNORED). Theoretically, the tilemap has enough storage for every pair of 32-bit x and y values, but in practice an engine may fail if abs(x*y) is too large.
- * The object theoretically has one dictionary of attributes for each positive integer (in practice, an engine may fail if a too-large dictionary index is used). The first dictionary is also the attributes dictionary of the entire object.
  * For each pair of 32-bit values, the tilemap stores a 32-bit integer. (A tilemap containing only 0's should in reality not occupy any memory, and a tilemap where all x and y coordinates are between, say, 0 and 3 inclusive, should probably occupy no more than 16 "slots" of memory.)
- * For each pair of integers tx and ty, where the tilemap has stored a positive integer, that integer (and the tilemap's dictionary at that integer) determines the collision behavior of pixels where x is in the range [x + tx*tilewidth, x + (tx+1)*tilewidth) and y is in the range [y + ty*tileheight, y + (ty+1)*tileheight). (If tileheight or tilewidth is not positive, those ranges are empty.) The collision mask is determined by the "id" value of that dictionary. The pixel type of pixels in the collision mask is equal to the (truncated) value at the nth item in the list value stored as "treatas" in that dictionary, or the value stored in the tilemap if "treatas" is absent or does not have a number in the appropriate palce.
- * On each frame, the tilemaps's update function will evaluate the contents of its "OnUpdate" attribute, if present.
+ * For each pair of integers tx and ty, where the tilemap has stored a non-zero 32-bit integer, that integer determines the collision behavior of pixels where x is in the range [x + tx*tilewidth, x + (tx+1)*tilewidth) and y is in the range [y + ty*tileheight, y + (ty+1)*tileheight). (If tileheight or tilewidth is not positive, those ranges are empty.) The collision mask is determined by the ("mask" id) attribute of the tilemap, where id is the integral id stored for those pixels. The pixel type of pixels in the collision mask is determined by the ("treatas" id m) attribute of the tilemap, where id is the value stored in the tilemap, and m is the value of the pixel in the collision mask.
 
 In order to evaluate an atom, the engine does the following:
  * If the atom is not a cons, return that atom as is.
