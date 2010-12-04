@@ -5,12 +5,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linkout", "Linkout\Linkout.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinkoutConsole", "LinkoutConsole\LinkoutConsole.csproj", "{FAA6BFA5-F1DD-427F-8D7C-85F0934B1F74}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinkoutGTK", "LinkoutGTK\LinkoutGTK.csproj", "{72272682-0B32-4FDF-9D3A-F3D5FC16A7DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{72272682-0B32-4FDF-9D3A-F3D5FC16A7DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72272682-0B32-4FDF-9D3A-F3D5FC16A7DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72272682-0B32-4FDF-9D3A-F3D5FC16A7DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72272682-0B32-4FDF-9D3A-F3D5FC16A7DD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FAA6BFA5-F1DD-427F-8D7C-85F0934B1F74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FAA6BFA5-F1DD-427F-8D7C-85F0934B1F74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAA6BFA5-F1DD-427F-8D7C-85F0934B1F74}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -21,6 +27,6 @@ Global
 		{FB95F413-8A38-41E1-B98B-3991613D3947}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Linkout\Linkout.csproj
+		StartupItem = LinkoutGTK\LinkoutGTK.csproj
 	EndGlobalSection
 EndGlobal

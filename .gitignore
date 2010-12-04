@@ -1,4 +1,6 @@
 *.userprefs
 *.pidb
 bin
+generated.cs
+/clr/Linkout/LinkoutGTK/gtk-gui/MainWindow.cs
 
