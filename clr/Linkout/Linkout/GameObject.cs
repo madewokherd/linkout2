@@ -60,7 +60,7 @@ namespace Linkout
 				if (priv_committed)
 					throw new InvalidOperationException("This object can no longer be modified.");
 				
-				priv_id = id;
+				priv_id = value;
 			}
 			get
 			{

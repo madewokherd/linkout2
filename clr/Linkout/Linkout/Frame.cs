@@ -5,12 +5,20 @@ namespace Linkout
 {
 	public sealed class Frame : Interpreter
 	{
+		private void set_functions()
+		{
+			functions[new StringAtom("getown")] = func_getown;
+			functions[new StringAtom("setown")] = func_setown;
+		}
+		
 		public Frame ()
 		{
 			priv_committed = false;
 			priv_frame_number = 0;
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
+			
+			set_functions();
 		}
 
 		private Frame (Frame original) : base(original.functions)
@@ -41,7 +49,7 @@ namespace Linkout
 			if (priv_committed)
 				throw new InvalidOperationException("This object can no longer be modified.");
 			
-			if (objectlist.Last != null && obj.id < objectlist.Last.Value.id)
+			if (objectlist.Last != null && obj.id <= objectlist.Last.Value.id)
 			{
 				obj.id = objectlist.Last.Value.id + 1;
 			}
@@ -91,9 +99,19 @@ namespace Linkout
 		
 		private void priv_advance()
 		{
+			LinkedListNode<GameObject> node;
+			
 			priv_frame_number += 1;
 			
-			/* FIXME: Add actual game logic. */
+			for (node = objectlist.Last; node != null; node = node.Previous)
+			{
+				Atom objectid = new FixedPointAtom(node.Value.id);
+				Locals locals = new Locals();
+				
+				locals.dict[new StringAtom("self")] = objectid;
+				
+				eval(node.Value.getattr(new StringAtom("OnFrame")), locals, this);
+			}
 			
 			commit();
 		}
@@ -105,6 +123,56 @@ namespace Linkout
 			new_frame.priv_advance();
 			
 			return new_frame;
+		}
+
+		public static Atom func_getown(Atom args, Locals locals, object user_data)
+		{
+			Frame self = (Frame)user_data;
+			Atom objectidatom = locals.dict[new StringAtom("self")];
+			LinkedListNode<GameObject> obj_node;
+			
+			args = self.eval_args(args, locals, user_data);
+			
+			if (objectidatom.atomtype == AtomType.FixedPoint &&
+			    self.objectdict.TryGetValue(objectidatom.get_fixedpoint(), out obj_node))
+			{
+				GameObject obj = obj_node.Value;
+				if (args.atomtype == AtomType.Cons)
+				{
+					Atom key = args.get_car();
+					return obj.getattr(key);
+				}
+			}
+			
+			return NilAtom.nil;
+		}
+
+		public static Atom func_setown(Atom args, Locals locals, object user_data)
+		{
+			Frame self = (Frame)user_data;
+			Atom objectidatom = locals.dict[new StringAtom("self")];
+			LinkedListNode<GameObject> obj_node;
+			
+			args = self.eval_args(args, locals, user_data);
+			
+			if (objectidatom.atomtype == AtomType.FixedPoint &&
+			    self.objectdict.TryGetValue(objectidatom.get_fixedpoint(), out obj_node))
+			{
+				GameObject obj = obj_node.Value;
+				while (args.atomtype == AtomType.Cons)
+				{
+					Atom key = args.get_car();
+					args = args.get_cdr();
+					if (args.atomtype != AtomType.Cons)
+						break;
+					Atom val = args.get_car();
+					args = args.get_cdr();
+					
+					obj.setattr(key, val);
+				}
+			}
+			
+			return NilAtom.nil;
 		}
 	}
 }
