@@ -44,6 +44,8 @@
     <Compile Include="Box.cs" />
     <Compile Include="Linkout.Lisp\Interpreter.cs" />
     <Compile Include="Linkout.Lisp\Locals.cs" />
+    <Compile Include="ScriptHost.cs" />
+    <Compile Include="Frame.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

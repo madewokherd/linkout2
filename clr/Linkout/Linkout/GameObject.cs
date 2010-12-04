@@ -11,6 +11,8 @@ namespace Linkout
 			attributes = new Dictionary<Atom, Atom>();
 		}
 		
+		private long priv_id;
+		
 		private Dictionary<Atom, Atom> attributes;
 
 		private bool priv_committed;
@@ -40,6 +42,21 @@ namespace Linkout
 			catch (KeyNotFoundException)
 			{
 				return NilAtom.nil;
+			}
+		}
+		
+		public long id
+		{
+			set
+			{
+				if (priv_committed)
+					throw new InvalidOperationException("This object can no longer be modified.");
+				
+				priv_id = id;
+			}
+			get
+			{
+				return priv_id;
 			}
 		}
 		

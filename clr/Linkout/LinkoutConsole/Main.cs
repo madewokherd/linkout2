@@ -1,5 +1,6 @@
 using System;
 using Linkout;
+using Linkout.Lisp;
 
 namespace LinkoutConsole
 {
@@ -23,7 +24,7 @@ namespace LinkoutConsole
 		{
 			// For now, just deserialize so we can test the parsing code
 			System.IO.Stream output = System.Console.OpenStandardOutput();
-			Linkout.Lisp.Interpreter interpreter = new Linkout.Lisp.Interpreter();
+			ScriptHost interpreter = new ScriptHost();
 			Linkout.Lisp.Locals no_locals = new Linkout.Lisp.Locals();
 			try
 			{
