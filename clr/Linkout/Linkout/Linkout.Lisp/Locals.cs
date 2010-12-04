@@ -4,19 +4,19 @@ namespace Linkout.Lisp
 {
 	public sealed class Locals
 	{
-		public Dictionary<StringAtom, Atom> dict;
+		public Dictionary<Atom, Atom> dict;
 		
 		public readonly Locals parent;
 		
 		public Locals ()
 		{
-			dict = new Dictionary<StringAtom, Atom>();
+			dict = new Dictionary<Atom, Atom>();
 			parent = null;
 		}
 
 		public Locals (Locals parent)
 		{
-			dict = new Dictionary<StringAtom, Atom>();
+			dict = new Dictionary<Atom, Atom>();
 			this.parent = parent;
 		}
 	}

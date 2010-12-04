@@ -8,10 +8,10 @@ namespace Linkout
 		internal GameObject ()
 		{
 			priv_committed = false;
-			attributes = new Dictionary<int, Dictionary<byte[], Atom>>();
+			attributes = new Dictionary<Atom, Atom>();
 		}
 		
-		private Dictionary<int, Dictionary<byte[], Atom>> attributes;
+		private Dictionary<Atom, Atom> attributes;
 
 		private bool priv_committed;
 		
@@ -23,27 +23,19 @@ namespace Linkout
 			}
 		}
 		
-		public void setattr(int index, byte[] key, Atom val)
+		public void setattr(Atom key, Atom val)
 		{
-			Dictionary<byte[], Linkout.Lisp.Atom> dict;
-			
 			if (priv_committed)
 				throw new InvalidOperationException("This object can no longer be modified.");
 
-			if (!attributes.TryGetValue(index, out dict))
-			{
-				dict = new Dictionary<byte[], Atom>();
-				attributes[index] = dict;
-			}
-			
-			dict[key] = val;
+			attributes[key] = val;
 		}
 		
-		public Atom getattr(int index, byte[] key)
+		public Atom getattr(Atom key)
 		{
 			try
 			{
-				return attributes[index][key];
+				return attributes[key];
 			}
 			catch (KeyNotFoundException)
 			{
