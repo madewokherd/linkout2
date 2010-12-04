@@ -9,9 +9,18 @@ namespace Linkout
 		{
 		}
 		
+		private Box (Box original) : base(original)
+		{
+		}
+		
 		public override Atom to_atom ()
 		{
 			return new ConsAtom(new StringAtom("box"), attributes_to_atom());
+		}
+		
+		public override GameObject copy ()
+		{
+			return new Box(this);
 		}
 	}
 }

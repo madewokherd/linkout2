@@ -13,6 +13,22 @@ namespace Linkout
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 		}
 
+		private Frame (Frame original) : base(original.functions)
+		{
+			LinkedListNode<GameObject> node;
+
+			priv_committed = false;
+			priv_frame_number = original.priv_frame_number;
+
+			objectlist = new LinkedList<GameObject>();
+			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
+
+			for (node = original.objectlist.First; node != null; node = node.Next)
+			{
+				add_object(node.Value.copy());
+			}
+		}
+		
 		private bool priv_committed;
 
 		private int priv_frame_number;
@@ -66,6 +82,29 @@ namespace Linkout
 			/* FIXME: Include frame id in the state. */
 			
 			return new ConsAtom(new StringAtom("frame"), objectlistatom);
+		}
+		
+		public Frame copy()
+		{
+			return new Frame(this);
+		}
+		
+		private void priv_advance()
+		{
+			priv_frame_number += 1;
+			
+			/* FIXME: Add actual game logic. */
+			
+			commit();
+		}
+		
+		public Frame advance()
+		{
+			Frame new_frame = copy();
+			
+			new_frame.priv_advance();
+			
+			return new_frame;
 		}
 	}
 }

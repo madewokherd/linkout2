@@ -9,6 +9,14 @@ namespace Linkout
 		{
 			priv_committed = false;
 			attributes = new Dictionary<Atom, Atom>();
+			priv_id = 0;
+		}
+		
+		internal GameObject (GameObject original)
+		{
+			priv_committed = false;
+			attributes = new Dictionary<Atom, Atom>(original.attributes);
+			priv_id = original.priv_id;
 		}
 		
 		private long priv_id;
@@ -64,6 +72,8 @@ namespace Linkout
 		{
 			priv_committed = true;
 		}
+		
+		public abstract GameObject copy();
 		
 		public Atom attributes_to_atom()
 		{

@@ -6,6 +6,7 @@ namespace Linkout
 	{
 		public ScriptHost () : base()
 		{
+			functions[new StringAtom("advance")] = func_advance;
 			functions[new StringAtom("frame")] = func_frame;
 		}
 
@@ -22,6 +23,13 @@ namespace Linkout
 		}
 		
 		private readonly StringAtom name_box = new StringAtom("box");
+		
+		public void advance_frame()
+		{
+			frame = frame.advance();
+			
+			commit_next_frame();
+		}
 		
 		public Atom func_frame(Atom args, Locals locals, object user_data)
 		{
@@ -76,6 +84,32 @@ namespace Linkout
 				throw new NotImplementedException("Can't verify frame state yet.");
 			
 			commit_next_frame();
+			
+			return NilAtom.nil;
+		}
+
+		public Atom func_advance(Atom args, Locals locals, object user_data)
+		{
+			int advance_count = 1, i;
+			
+			args = eval_args(args, locals, user_data);
+			
+			if (frame == null)
+				throw new InvalidOperationException("Create a frame first");
+			
+			if (args.atomtype == AtomType.Cons)
+			{
+				Atom count_atom = args.get_car();
+				if (count_atom.atomtype == AtomType.FixedPoint)
+				{
+					advance_count = (int)(count_atom.get_fixedpoint() >> 16);
+				}
+			}
+			
+			for (i=0; i<advance_count; i++)
+			{
+				advance_frame();
+			}
 			
 			return NilAtom.nil;
 		}

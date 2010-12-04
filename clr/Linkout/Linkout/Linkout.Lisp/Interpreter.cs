@@ -9,7 +9,12 @@ namespace Linkout.Lisp
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("+")] = func_plus;
 		}
-		
+
+		public Interpreter (Dictionary<Atom, LispFunction> functions)
+		{
+			this.functions = functions;
+		}
+
 		public delegate Atom LispFunction(Atom args, Locals locals, object user_data);
 		
 		protected Dictionary<Atom, LispFunction> functions;
