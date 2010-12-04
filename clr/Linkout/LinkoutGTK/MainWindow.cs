@@ -1,4 +1,5 @@
 using System;
+using Mono.Unix;
 using Gtk;
 
 public partial class MainWindow : Gtk.Window
@@ -17,6 +18,22 @@ public partial class MainWindow : Gtk.Window
 	protected virtual void OnQuitClicked (object sender, System.EventArgs e)
 	{
 		Application.Quit ();
+	}
+	
+	protected virtual void OnOpenActivated (object sender, System.EventArgs e)
+	{
+		FileChooserDialog dialog;
+		
+		dialog = new FileChooserDialog(Catalog.GetString("Open File"), this,
+		                               FileChooserAction.Open,
+		                               Stock.Cancel, ResponseType.Cancel,
+		                               Stock.Open, ResponseType.Accept);
+		
+		dialog.Run();
+		
+		/* TODO: Actually do something with the file. */
+		
+		dialog.Destroy();
 	}
 }
 
