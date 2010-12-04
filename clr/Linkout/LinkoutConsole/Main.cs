@@ -19,7 +19,7 @@ namespace LinkoutConsole
 			return 1;
 		}
 		
-		public static int Execute (string[] args, System.IO.Stream input)
+		public static int Execute (string[] args, System.IO.Stream input, object user_data)
 		{
 			// For now, just deserialize so we can test the parsing code
 			System.IO.Stream output = System.Console.OpenStandardOutput();
@@ -31,7 +31,7 @@ namespace LinkoutConsole
 				{
 					Linkout.Lisp.Atom atom;
 					atom = Linkout.Lisp.Atom.from_stream(input);
-					atom = interpreter.eval(atom, no_locals);
+					atom = interpreter.eval(atom, no_locals, user_data);
 					atom.write_to_stream(output);
 				}
 			}
@@ -77,7 +77,7 @@ namespace LinkoutConsole
 				input = System.IO.File.OpenRead(filename);
 			
 			if (args[0] == "e")
-				return Execute(args, input);
+				return Execute(args, input, null);
 			
 			return Usage();
 		}
