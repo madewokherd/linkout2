@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Linkout;
 using Linkout.Lisp;
 
@@ -20,12 +21,23 @@ namespace LinkoutConsole
 			return 1;
 		}
 		
-		public static int Execute (string[] args, System.IO.Stream input, object user_data)
+		Stream input;
+		Stream output;
+		ScriptHost interpreter;
+		
+		private void OnNewFrame()
 		{
-			// For now, just deserialize so we can test the parsing code
-			System.IO.Stream output = System.Console.OpenStandardOutput();
-			ScriptHost interpreter = new ScriptHost();
+			interpreter.frame.to_atom().write_to_stream(output);
+		}
+		
+		public int Execute (string[] args, System.IO.Stream input, object user_data)
+		{
+			output = System.Console.OpenStandardOutput();
+			interpreter = new ScriptHost();
 			Linkout.Lisp.Locals no_locals = new Linkout.Lisp.Locals();
+			
+			interpreter.OnNewFrame += OnNewFrame;
+			
 			try
 			{
 				while (true)
@@ -33,7 +45,6 @@ namespace LinkoutConsole
 					Linkout.Lisp.Atom atom;
 					atom = Linkout.Lisp.Atom.from_stream(input);
 					atom = interpreter.eval(atom, no_locals, user_data);
-					atom.write_to_stream(output);
 				}
 			}
 			catch (System.IO.EndOfStreamException)
@@ -42,12 +53,11 @@ namespace LinkoutConsole
 			return 0;
 		}
 		
-		public static int Main (string[] args)
+		public int instance_main(string[] args)
 		{
 			int i;
 			bool stdin = false;
 			string filename = null;
-			System.IO.Stream input = null;
 			
 			if (args.Length == 0)
 				return Usage();
@@ -81,6 +91,11 @@ namespace LinkoutConsole
 				return Execute(args, input, null);
 			
 			return Usage();
+		}
+		
+		public static int Main (string[] args)
+		{
+			return new MainClass().instance_main(args);
 		}
 	}
 }

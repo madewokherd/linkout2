@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Linkout.Lisp;
 namespace Linkout
 {
 	public sealed class Box : GameObject
@@ -7,9 +9,9 @@ namespace Linkout
 		{
 		}
 		
-		public override Lisp.Atom to_atom ()
+		public override Atom to_atom ()
 		{
-			throw new NotImplementedException ();
+			return new ConsAtom(new StringAtom("box"), attributes_to_atom());
 		}
 	}
 }

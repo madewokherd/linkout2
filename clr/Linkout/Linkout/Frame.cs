@@ -3,32 +3,69 @@ using System.Collections.Generic;
 using Linkout.Lisp;
 namespace Linkout
 {
-	public class Frame : Interpreter
+	public sealed class Frame : Interpreter
 	{
 		public Frame ()
 		{
 			priv_committed = false;
-			priv_next_id = 0;
 			priv_frame_number = 0;
-			objects = new SortedDictionary<long, GameObject>();
+			objectlist = new LinkedList<GameObject>();
+			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 		}
 
 		private bool priv_committed;
 
-		private long priv_next_id;
 		private int priv_frame_number;
 		
-		private SortedDictionary<long, GameObject> objects;
+		private LinkedList<GameObject> objectlist;
+		private Dictionary<long, LinkedListNode<GameObject>> objectdict;
 		
 		public void add_object(GameObject obj)
 		{
-			if (obj.id < priv_next_id)
-			{
-				obj.id = priv_next_id;
-			}
-			priv_next_id = obj.id + 1;
+			if (priv_committed)
+				throw new InvalidOperationException("This object can no longer be modified.");
 			
-			objects[obj.id] = obj;
+			if (objectlist.Last != null && obj.id < objectlist.Last.Value.id)
+			{
+				obj.id = objectlist.Last.Value.id + 1;
+			}
+			
+			objectdict[obj.id] = objectlist.AddLast(obj);
+		}
+		
+		public int frame_number
+		{
+			set
+			{
+				if (priv_committed)
+					throw new InvalidOperationException("This object can no longer be modified.");
+				priv_frame_number = frame_number;
+			}
+			get
+			{
+				return priv_frame_number;
+			}
+		}
+		
+		public void commit()
+		{
+			priv_committed = true;
+		}
+		
+		public Atom to_atom()
+		{
+			Atom objectlistatom = NilAtom.nil;
+			LinkedListNode<GameObject> node;
+			
+			for (node = objectlist.Last; node != null; node = node.Previous)
+			{
+				Atom objectatom = node.Value.to_atom();
+				objectlistatom = new ConsAtom(objectatom, objectlistatom);
+			}
+			
+			/* FIXME: Include frame id in the state. */
+			
+			return new ConsAtom(new StringAtom("frame"), objectlistatom);
 		}
 	}
 }

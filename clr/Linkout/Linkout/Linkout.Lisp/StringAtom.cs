@@ -52,7 +52,7 @@ namespace Linkout.Lisp
 		
 		public override int GetHashCode ()
 		{
-			int result = 86, i;
+			int result = -0x3465eda6, i;
 			for (i=0; i<this.string_value.Length; i++)
 				result = result * 33 + i;
 			return result;

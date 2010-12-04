@@ -40,7 +40,7 @@ namespace Linkout.Lisp
 		
 		public override int GetHashCode ()
 		{
-			return (int)((this.int_value >> 16) ^ (this.int_value & 0xffff));
+			return (int)((this.int_value >> 16) ^ (this.int_value & 0xffff) ^ 0xfa425617);
 		}
 		
 		public override void to_stream (System.IO.Stream output)

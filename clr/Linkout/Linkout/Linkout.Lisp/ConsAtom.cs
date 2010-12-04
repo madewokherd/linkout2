@@ -42,7 +42,7 @@ namespace Linkout.Lisp
 		
 		public override int GetHashCode ()
 		{
-			return (this.car.GetHashCode() * 17) + this.cdr.GetHashCode();
+			return (this.cdr.GetHashCode() * 17) + this.car.GetHashCode();
 		}
 		
 		private static void write_tail (System.IO.Stream output, Atom atom)

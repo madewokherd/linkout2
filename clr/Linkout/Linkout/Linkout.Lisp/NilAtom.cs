@@ -40,7 +40,7 @@ namespace Linkout.Lisp
 
 		public override int GetHashCode ()
 		{
-			return 13;
+			return 0x6839dbce;
 		}
 		
 		private readonly byte[] nil_str = {40, 41}; // ()

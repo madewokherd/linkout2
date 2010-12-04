@@ -9,7 +9,17 @@ namespace Linkout
 			functions[new StringAtom("frame")] = func_frame;
 		}
 
+		public delegate void NewFrameEvent();
+		
+		public event NewFrameEvent OnNewFrame;
+		
 		public Frame frame;
+		
+		private void commit_next_frame()
+		{
+			frame.commit();
+			OnNewFrame();
+		}
 		
 		private readonly StringAtom name_box = new StringAtom("box");
 		
@@ -64,6 +74,8 @@ namespace Linkout
 				frame = new_frame;
 			else
 				throw new NotImplementedException("Can't verify frame state yet.");
+			
+			commit_next_frame();
 			
 			return NilAtom.nil;
 		}

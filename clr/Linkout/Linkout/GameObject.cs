@@ -13,7 +13,7 @@ namespace Linkout
 		
 		private long priv_id;
 		
-		private Dictionary<Atom, Atom> attributes;
+		protected Dictionary<Atom, Atom> attributes;
 
 		private bool priv_committed;
 		
@@ -63,6 +63,19 @@ namespace Linkout
 		public virtual void commit()
 		{
 			priv_committed = true;
+		}
+		
+		public Atom attributes_to_atom()
+		{
+			Atom attributelist = NilAtom.nil;
+			
+			foreach (KeyValuePair<Atom, Atom> kvp in attributes)
+			{
+				// attributelist = ((key value) . attributelist)
+				attributelist = new ConsAtom(new ConsAtom(kvp.Key, new ConsAtom(kvp.Value, NilAtom.nil)), attributelist);
+			}
+			
+			return attributelist;
 		}
 		
 		public abstract Atom to_atom();
