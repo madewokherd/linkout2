@@ -2,5 +2,5 @@
 *.pidb
 bin
 generated.cs
-/clr/Linkout/LinkoutGTK/gtk-gui/MainWindow.cs
+/clr/Linkout/LinkoutGTK/gtk-gui/LinkoutGTK.MainWindow.cs
 
