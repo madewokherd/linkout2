@@ -19,7 +19,8 @@ namespace Linkout
 		private void commit_next_frame()
 		{
 			frame.commit();
-			OnNewFrame();
+			if (OnNewFrame != null)
+				OnNewFrame();
 		}
 		
 		private readonly StringAtom name_box = new StringAtom("box");

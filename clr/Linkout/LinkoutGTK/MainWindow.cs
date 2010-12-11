@@ -15,9 +15,7 @@ namespace LinkoutGTK
 			Build ();
 		}
 	
-		//ScriptHost scripthost;
-		
-		//LinkedList<Atom> script_commands;
+		ScriptHost scripthost;
 		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
@@ -62,19 +60,26 @@ namespace LinkoutGTK
 			
 			try
 			{
-				/*
 				try
 				{
+					scripthost = new ScriptHost();
+					Locals no_locals = new Locals();
+					
 					while (true)
 					{
 						Atom atom;
 						atom = Atom.from_stream(infile);
+						scripthost.eval(atom, no_locals, null);
 					}
 				}
 				catch (System.IO.EndOfStreamException)
 				{
 				}
-				*/
+				catch (Exception exc)
+				{
+					Utils.show_error_dialog(exc, this, String.Format(Catalog.GetString("Cannot load '{0}'"), filename));
+					return;
+				}
 			}
 			finally
 			{
