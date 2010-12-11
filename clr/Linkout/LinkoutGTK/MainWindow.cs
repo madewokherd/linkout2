@@ -69,11 +69,10 @@ namespace LinkoutGTK
 					{
 						Atom atom;
 						atom = Atom.from_stream(infile);
+						if (atom == null)
+							break;
 						scripthost.eval(atom, no_locals, null);
 					}
-				}
-				catch (System.IO.EndOfStreamException)
-				{
 				}
 				catch (Exception exc)
 				{

@@ -36,18 +36,28 @@ namespace Linkout.Lisp
 				result = from_stream(input, out close_paren);
 				if (!close_paren)
 				{
+					if (result == null)
+						throw new System.IO.EndOfStreamException();
+					
 					Atom temp = from_stream(input, out close_paren);
 					if (temp != null)
 					{
 						/* (x . y z) */
 						throw new ArgumentException("invalid syntax");
 					}
+					else if (!close_paren)
+					{
+						throw new System.IO.EndOfStreamException();
+					}
 				}
 				return result;
 			}
 			if (result == null)
 			{
-				return NilAtom.nil;
+				if (close_paren)
+					return NilAtom.nil;
+				else
+					throw new System.IO.EndOfStreamException();
 			}
 			else if (close_paren)
 			{
@@ -71,7 +81,7 @@ namespace Linkout.Lisp
 				current_byte = input.ReadByte();
 			
 			if (current_byte == -1)
-				throw new System.IO.EndOfStreamException();
+				return null;
 			
 			if (current_byte == '"')
 			{
@@ -198,7 +208,10 @@ namespace Linkout.Lisp
 				car = from_stream(input, out recursive_close_paren);
 				if (car == null)
 				{
-					return NilAtom.nil;
+					if (recursive_close_paren)
+						return NilAtom.nil;
+					else
+						throw new System.IO.EndOfStreamException();
 				}
 				else if (recursive_close_paren)
 				{

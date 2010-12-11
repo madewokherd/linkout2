@@ -38,17 +38,13 @@ namespace LinkoutConsole
 			
 			interpreter.OnNewFrame += OnNewFrame;
 			
-			try
+			while (true)
 			{
-				while (true)
-				{
-					Linkout.Lisp.Atom atom;
-					atom = Linkout.Lisp.Atom.from_stream(input);
-					atom = interpreter.eval(atom, no_locals, user_data);
-				}
-			}
-			catch (System.IO.EndOfStreamException)
-			{
+				Linkout.Lisp.Atom atom;
+				atom = Linkout.Lisp.Atom.from_stream(input);
+				if (atom == null)
+					break;
+				atom = interpreter.eval(atom, no_locals, user_data);
 			}
 			return 0;
 		}
