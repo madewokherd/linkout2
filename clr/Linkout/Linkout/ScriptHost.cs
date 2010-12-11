@@ -8,6 +8,7 @@ namespace Linkout
 		{
 			functions[new StringAtom("advance")] = func_advance;
 			functions[new StringAtom("frame")] = func_frame;
+			functions[new StringAtom("seek-to")] = func_seek_to;
 		}
 
 		public delegate void NewFrameEvent();
@@ -21,6 +22,8 @@ namespace Linkout
 		
 		public Frame frame;
 
+		public Frame last_frame;
+
 		
 		private void commit_next_frame()
 		{
@@ -33,7 +36,7 @@ namespace Linkout
 		
 		public void advance_frame()
 		{
-			frame = frame.advance();
+			last_frame = frame = frame.advance();
 			
 			commit_next_frame();
 		}
@@ -87,7 +90,7 @@ namespace Linkout
 			
 			if (frame == null)
 			{
-				frame = new_frame;
+				last_frame = frame = new_frame;
 			
 				commit_next_frame();
 			}
@@ -127,6 +130,29 @@ namespace Linkout
 			for (i=0; i<advance_count; i++)
 			{
 				advance_frame();
+			}
+			
+			return NilAtom.nil;
+		}
+		
+		public Atom func_seek_to(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			if (frame == null)
+				throw new InvalidOperationException("Create a frame first");
+			
+			if (args.atomtype == AtomType.Cons)
+			{
+				Atom count_atom = args.get_car();
+				if (count_atom.atomtype == AtomType.FixedPoint)
+				{
+					uint new_framenum = (uint)(count_atom.get_fixedpoint() >> 16);
+					if (new_framenum < last_frame.frame_number)
+					{
+						frame = last_frame.get_previous_frame(new_framenum);
+					}
+				}
 			}
 			
 			return NilAtom.nil;

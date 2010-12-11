@@ -146,6 +146,11 @@ namespace Linkout
 			return true;
 		}
 		
+		public override int GetHashCode ()
+		{
+			throw new NotImplementedException ();
+		}
+		
 		public override bool Equals (object obj)
 		{
 			string dummy;

@@ -16,6 +16,7 @@ namespace Linkout
 			priv_committed = false;
 			priv_frame_number = 0;
 			prev_frame_hash = 0;
+			prev_frames = null;
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 			
@@ -29,6 +30,7 @@ namespace Linkout
 			priv_committed = false;
 			priv_frame_number = original.priv_frame_number;
 			prev_frame_hash = original.GetHashCode();
+			prev_frames = original.prev_frames;
 			
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
@@ -41,12 +43,14 @@ namespace Linkout
 		
 		private bool priv_committed;
 
-		private int priv_frame_number;
+		private uint priv_frame_number;
 		
 		private LinkedList<GameObject> objectlist;
 		private Dictionary<long, LinkedListNode<GameObject>> objectdict;
 		
+		/* History */
 		private int prev_frame_hash;
+		private Frame[] prev_frames;
 		
 		public void add_object(GameObject obj)
 		{
@@ -61,7 +65,7 @@ namespace Linkout
 			objectdict[obj.id] = objectlist.AddLast(obj);
 		}
 		
-		public int frame_number
+		public uint frame_number
 		{
 			set
 			{
@@ -101,11 +105,38 @@ namespace Linkout
 			return new Frame(this);
 		}
 		
-		private void priv_advance()
+		private Frame[] build_frame_history(Frame prev_frame)
+		{
+			uint this_frame_number = prev_frame.priv_frame_number+1;
+			int array_size=0;
+			uint i=0x80000000;
+			Frame[] result;
+			
+			/* determine how many previous frames to store */
+			while (i != 0)
+			{
+				if ((this_frame_number & i) != 0)
+					array_size++;
+				i = i >> 1;
+			}
+			
+			result = new Frame[array_size];
+			
+			for (i=0; i<array_size-1; i++)
+				result[i] = prev_frame.prev_frames[i];
+			
+			result[array_size-1] = prev_frame;
+			
+			return result;
+		}
+		
+		private void priv_advance(Frame prev_frame)
 		{
 			LinkedListNode<GameObject> node;
 			
 			priv_frame_number += 1;
+			
+			this.prev_frames = build_frame_history(prev_frame);
 			
 			for (node = objectlist.Last; node != null; node = node.Previous)
 			{
@@ -124,11 +155,31 @@ namespace Linkout
 		{
 			Frame new_frame = copy();
 			
-			new_frame.priv_advance();
+			new_frame.priv_advance(this);
 			
 			return new_frame;
 		}
 
+		public Frame get_previous_frame(uint frameid)
+		{
+			if (frameid >= this.priv_frame_number)
+				throw new ArgumentOutOfRangeException("frameid", frameid, String.Format("Must be less than {0}", this.priv_frame_number));
+			
+			Frame[] prev = this.prev_frames;
+			int i=0;
+			
+			while (true)
+			{
+				Frame prev_frame = prev[i];
+				if (frameid == prev_frame.priv_frame_number)
+					return prev_frame;
+				else if (frameid < prev_frame.priv_frame_number)
+					prev = prev_frame.prev_frames;
+				else
+					i++;
+			}
+		}
+		
 		public static Atom func_getown(Atom args, Locals locals, object user_data)
 		{
 			Frame self = (Frame)user_data;
@@ -196,7 +247,7 @@ namespace Linkout
 				result = result + obj.GetHashCode();
 			}
 			
-			result = result + priv_frame_number + prev_frame_hash;
+			result = result + (int)priv_frame_number + prev_frame_hash;
 			
 			return result;
 		}
