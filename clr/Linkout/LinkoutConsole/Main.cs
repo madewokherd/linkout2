@@ -29,7 +29,12 @@ namespace LinkoutConsole
 		{
 			interpreter.frame.to_atom().write_to_stream(output);
 		}
-		
+
+		private void OnHint(Atom args)
+		{
+			new ConsAtom(new StringAtom("hint"), args).write_to_stream(output);
+		}
+
 		public int Execute (string[] args, System.IO.Stream input, object user_data)
 		{
 			output = System.Console.OpenStandardOutput();
@@ -37,6 +42,7 @@ namespace LinkoutConsole
 			Linkout.Lisp.Locals no_locals = new Linkout.Lisp.Locals();
 			
 			interpreter.OnNewFrame += OnNewFrame;
+			interpreter.OnHint += OnHint;
 			
 			while (true)
 			{

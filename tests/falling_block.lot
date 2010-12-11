@@ -1,4 +1,4 @@
-LINKOUT_REPLAY
+(hint replay-file)
 
 (frame
   (box (x 0)

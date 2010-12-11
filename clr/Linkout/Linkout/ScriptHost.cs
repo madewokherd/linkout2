@@ -8,6 +8,7 @@ namespace Linkout
 		{
 			functions[new StringAtom("advance")] = func_advance;
 			functions[new StringAtom("frame")] = func_frame;
+			functions[new StringAtom("hint")] = func_hint;
 			functions[new StringAtom("seek-to")] = func_seek_to;
 		}
 
@@ -19,6 +20,10 @@ namespace Linkout
 		
 		public event ContentCheckFailEvent OnContentCheckFail;
 		
+		public delegate void HintEvent(Atom args);
+		
+		public event HintEvent OnHint;
+
 		
 		public Frame frame;
 
@@ -154,6 +159,16 @@ namespace Linkout
 					}
 				}
 			}
+			
+			return NilAtom.nil;
+		}
+		
+		public Atom func_hint(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+
+			if (OnHint != null)
+				OnHint(args);
 			
 			return NilAtom.nil;
 		}
