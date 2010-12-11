@@ -15,6 +15,7 @@ namespace Linkout
 		{
 			priv_committed = false;
 			priv_frame_number = 0;
+			prev_frame_hash = 0;
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 			
@@ -27,7 +28,8 @@ namespace Linkout
 
 			priv_committed = false;
 			priv_frame_number = original.priv_frame_number;
-
+			prev_frame_hash = original.GetHashCode();
+			
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 
@@ -43,6 +45,8 @@ namespace Linkout
 		
 		private LinkedList<GameObject> objectlist;
 		private Dictionary<long, LinkedListNode<GameObject>> objectdict;
+		
+		private int prev_frame_hash;
 		
 		public void add_object(GameObject obj)
 		{
@@ -173,6 +177,53 @@ namespace Linkout
 			}
 			
 			return NilAtom.nil;
+		}
+		
+		/* Frame hasing/comparison
+		 * 
+		 * We're not overriding the standard methods because these methods
+		 * do not satisfy the proper constraints. The hash
+		 * function takes into account the current frame number and history,
+		 * but the comparison only accounts for frame contents.
+		 *
+		 * Comparing the entire history of a frame would be expensive. */
+		public int frame_hash ()
+		{
+			int result=0;
+			
+			foreach (GameObject obj in objectlist)
+			{
+				result = result + obj.GetHashCode();
+			}
+			
+			result = result + priv_frame_number + prev_frame_hash;
+			
+			return result;
+		}
+		
+		public bool frame_content_equals (Frame obj, out string message)
+		{
+			if (this.objectlist.Count != obj.objectlist.Count)
+			{
+				message = String.Format("Object count {0} != {1}", this.objectlist.Count, obj.objectlist.Count);
+				return false;
+			}
+			
+			LinkedListNode<GameObject> this_node, obj_node;
+			this_node = this.objectlist.First;
+			obj_node = obj.objectlist.First;
+			
+			while (this_node != null)
+			{
+				if (!this_node.Value.Equals(obj_node.Value, out message))
+					return false;
+				
+				this_node = this_node.Next;
+				obj_node = obj_node.Next;
+			}
+			
+			message = "";
+			return true;
 		}
 	}
 }

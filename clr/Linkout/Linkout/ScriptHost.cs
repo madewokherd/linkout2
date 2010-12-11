@@ -13,8 +13,14 @@ namespace Linkout
 		public delegate void NewFrameEvent();
 		
 		public event NewFrameEvent OnNewFrame;
+
+		public delegate void ContentCheckFailEvent(Frame expected, string message);
+		
+		public event ContentCheckFailEvent OnContentCheckFail;
+		
 		
 		public Frame frame;
+
 		
 		private void commit_next_frame()
 		{
@@ -80,11 +86,22 @@ namespace Linkout
 			}
 			
 			if (frame == null)
+			{
 				frame = new_frame;
-			else
-				throw new NotImplementedException("Can't verify frame state yet.");
 			
-			commit_next_frame();
+				commit_next_frame();
+			}
+			else
+			{
+				string message;
+				if (!frame.frame_content_equals(new_frame, out message))
+				{
+					if (OnContentCheckFail != null)
+						OnContentCheckFail(new_frame, message);
+					else
+						Console.WriteLine(String.Format("Frame content verification failed: {0}", message));
+				}
+			}
 			
 			return NilAtom.nil;
 		}

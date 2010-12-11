@@ -22,6 +22,11 @@ namespace Linkout
 		{
 			return new Box(this);
 		}
+		
+		public override int GetHashCode ()
+		{
+			return get_base_hash() ^ 0x7b68d637;
+		}
 	}
 }
 
