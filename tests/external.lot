@@ -11,3 +11,12 @@
   (a 1)
   (b 2)))
 
+(define (define-test) (advance (let ((self 0)) (setown c 3))))
+
+(define-test)
+
+(frame (box
+  (a 1)
+  (b 2)
+  (c 3)))
+

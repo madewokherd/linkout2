@@ -8,20 +8,27 @@ namespace Linkout.Lisp
 		{
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("+")] = func_plus;
+			functions[new StringAtom("define")] = func_define;
+			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
 			functions[new StringAtom("quot")] = func_quot;
+
+			custom_functions = new Dictionary<Atom, CustomLispFunction>();
 		}
 
 		public Interpreter (Dictionary<Atom, LispFunction> functions)
 		{
 			this.functions = functions;
+			custom_functions = new Dictionary<Atom, CustomLispFunction>();
 		}
 
 		public delegate Atom LispFunction(Atom args, Locals locals, object user_data);
 		
 		protected Dictionary<Atom, LispFunction> functions;
-		
+
+		protected Dictionary<Atom, CustomLispFunction> custom_functions;
+
 		public Atom func_plus(Atom args, Locals locals, object user_data)
 		{
 			long result = 0;
@@ -38,6 +45,32 @@ namespace Linkout.Lisp
 			{
 			}
 			return new FixedPointAtom(result);
+		}
+		
+		public virtual void add_custom_function(Atom args, bool eval_args_first)
+		{
+			CustomLispFunction f;
+			
+			f = CustomLispFunction.from_args(args, eval_args_first);
+			
+			if (f != null)
+			{
+				custom_functions[f.name] = f;
+			}
+		}
+		
+		public Atom func_define(Atom args, Locals locals, object user_data)
+		{
+			add_custom_function(args, true);
+			
+			return NilAtom.nil;
+		}
+		
+		public Atom func_defineex(Atom args, Locals locals, object user_data)
+		{
+			add_custom_function(args, false);
+			
+			return NilAtom.nil;
 		}
 		
 		public Atom func_let(Atom args, Locals locals, object user_data)
@@ -125,6 +158,18 @@ namespace Linkout.Lisp
 			return args;
 		}
 
+		public Atom eval_custom(CustomLispFunction f, Atom args, Locals locals, object user_data)
+		{
+			Locals new_locals;
+			
+			if (f.eval_args_first)
+				args = eval_args(args, locals, user_data);
+			
+			new_locals = Locals.from_pattern(locals, f.args, args);
+			
+			return eval(f.body, new_locals, user_data);
+		}
+		
 		public Atom eval(Atom args, Locals locals, object user_data)
 		{
 			if (args.atomtype == AtomType.Cons)
@@ -132,11 +177,16 @@ namespace Linkout.Lisp
 				Atom function_name = args.get_car();
 				Atom function_args = args.get_cdr();
 				LispFunction func;
-				if (!functions.TryGetValue(function_name, out func))
+				CustomLispFunction custom_func;
+				if (custom_functions.TryGetValue(function_name, out custom_func))
 				{
-					throw new Exception(String.Format("Function {0} not found", function_name));
+					return eval_custom(custom_func, args, locals, user_data);
 				}
-				return func(function_args, locals, user_data);
+				if (functions.TryGetValue(function_name, out func))
+				{
+					return func(function_args, locals, user_data);
+				}
+				throw new Exception(String.Format("Function {0} not found", function_name));
 			}
 			else
 				return args;

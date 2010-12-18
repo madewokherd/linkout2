@@ -280,6 +280,8 @@ namespace Linkout
 			
 			result = result + (int)priv_frame_number + prev_frame_hash;
 			
+			// FIXME: Include custom functions
+			
 			return result;
 		}
 		
@@ -318,6 +320,15 @@ namespace Linkout
 			LinkedListEnumerator<GameObject> result = new LinkedListEnumerator<GameObject>(objectlist.First);
 			
 			return result;
+		}
+		
+		public override void add_custom_function (Atom args, bool eval_args_first)
+		{
+			if (priv_frame_number != 0)
+				/* Functions may only be defined on the first frame. */
+				return;
+			
+			base.add_custom_function (args, eval_args_first);
 		}
 	}
 }

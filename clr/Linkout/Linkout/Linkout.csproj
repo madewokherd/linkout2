@@ -47,6 +47,7 @@
     <Compile Include="ScriptHost.cs" />
     <Compile Include="Frame.cs" />
     <Compile Include="LinkedListEnumerator.cs" />
+    <Compile Include="Linkout.Lisp\CustomLispFunction.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
