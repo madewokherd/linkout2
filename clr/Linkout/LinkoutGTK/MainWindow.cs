@@ -157,13 +157,20 @@ namespace LinkoutGTK
 			int width;
 			int height;
 			
-			width = this.drawingarea.Allocation.Size.Width;
-			height = this.drawingarea.Allocation.Size.Height;
-			
-			game_region = new RectangleF(0, 0, width, height);
-			output_region = new RectangleF(0, 0, width, height);
-			
-			drawing.DrawFrame(g, scripthost.frame, game_region, output_region);
+			try
+			{
+				width = this.drawingarea.Allocation.Size.Width;
+				height = this.drawingarea.Allocation.Size.Height;
+				
+				game_region = new RectangleF(0, 0, width, height);
+				output_region = new RectangleF(0, 0, width, height);
+				
+				drawing.DrawFrame(g, scripthost.frame, game_region, output_region);
+			}
+			finally
+			{
+				g.Dispose();
+			}
 		}
 		
 		protected virtual void OnDrawingareaExposeEvent (object o, Gtk.ExposeEventArgs args)
