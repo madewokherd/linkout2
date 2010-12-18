@@ -140,6 +140,22 @@ namespace Linkout
 			return NilAtom.nil;
 		}
 		
+		public bool seek_to(uint new_framenum)
+		{
+			if (new_framenum < last_frame.frame_number)
+			{
+				frame = last_frame.get_previous_frame(new_framenum);
+				return true;
+			}
+			else if (new_framenum == last_frame.frame_number)
+			{
+				frame = last_frame;
+				return true;
+			}
+			else
+				return false;
+		}
+		
 		public Atom func_seek_to(Atom args, Locals locals, object user_data)
 		{
 			args = eval_args(args, locals, user_data);
@@ -153,10 +169,7 @@ namespace Linkout
 				if (count_atom.atomtype == AtomType.FixedPoint)
 				{
 					uint new_framenum = (uint)(count_atom.get_fixedpoint() >> 16);
-					if (new_framenum < last_frame.frame_number)
-					{
-						frame = last_frame.get_previous_frame(new_framenum);
-					}
+					seek_to(new_framenum);
 				}
 			}
 			

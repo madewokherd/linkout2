@@ -73,6 +73,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="gtk-gui\LinkoutGTK.MainWindow.cs" />
+    <Compile Include="RunState.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

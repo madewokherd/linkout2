@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using Mono.Unix;
+using GLib;
 using Gtk;
 using Gtk.DotNet;
 using Linkout;
@@ -16,10 +17,16 @@ namespace LinkoutGTK
 		public MainWindow () : base(Gtk.WindowType.Toplevel)
 		{
 			Build ();
+			runstate = RunState.Nothing;
+			frame_delay = 20; /* 50 frames per second */
 		}
 	
 		ScriptHost scripthost;
 		LinkoutDrawing.Drawing drawing;
+		
+		RunState runstate;
+		int frame_delay;
+		uint advance_timer;
 		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
@@ -30,6 +37,53 @@ namespace LinkoutGTK
 		protected virtual void OnQuitClicked (object sender, System.EventArgs e)
 		{
 			Application.Quit ();
+		}
+		
+				                 
+		bool advance()
+		{
+			switch (runstate)
+			{
+			case RunState.Running:
+				scripthost.advance_frame();
+				this.drawingarea.QueueDraw();
+				return true;
+			case RunState.Playing:
+				if (!scripthost.seek_to(scripthost.frame.frame_number + 1))
+				{
+					set_state(RunState.Stopped);
+					return false;
+				}
+				this.drawingarea.QueueDraw();
+				return true;
+			default:
+				return false;
+			}
+		}
+		
+		public void set_state (RunState new_state, int frame_delay)
+		{
+			if (scripthost == null || scripthost.frame == null)
+				new_state = RunState.Nothing;
+			
+			if (advance_timer != 0)
+			{
+				GLib.Source.Remove(advance_timer);
+				advance_timer = 0;
+			}
+			
+			if (frame_delay != -1 && (new_state != RunState.Nothing && new_state != RunState.Stopped))
+			{
+				advance_timer = GLib.Timeout.Add((uint)frame_delay, new TimeoutHandler(advance));
+				this.frame_delay = frame_delay;
+			}
+			
+			runstate = new_state;
+		}
+		
+		public void set_state (RunState new_state)
+		{
+			set_state(new_state, frame_delay);
 		}
 		
 		protected virtual void OnOpenActivated (object sender, System.EventArgs e)
@@ -79,6 +133,8 @@ namespace LinkoutGTK
 						scripthost.eval(atom, no_locals, null);
 					}
 					
+					set_state(RunState.Running, 50);
+					
 					this.drawingarea.QueueDraw();
 				}
 				catch (Exception exc)
@@ -93,21 +149,13 @@ namespace LinkoutGTK
 			}
 		}
 		
-		protected virtual void OnDrawingareaExposeEvent (object o, Gtk.ExposeEventArgs args)
+		private void draw_current_frame()
 		{
 			System.Drawing.Graphics g = Gtk.DotNet.Graphics.FromDrawable(this.drawingarea.GdkWindow);
 			RectangleF game_region;
 			RectangleF output_region;
 			int width;
 			int height;
-
-			args.RetVal = true;
-
-			if (scripthost == null || scripthost.frame == null)
-			{
-				this.drawingarea.GdkWindow.Clear();
-				return;
-			}
 			
 			width = this.drawingarea.Allocation.Size.Width;
 			height = this.drawingarea.Allocation.Size.Height;
@@ -116,6 +164,23 @@ namespace LinkoutGTK
 			output_region = new RectangleF(0, 0, width, height);
 			
 			drawing.DrawFrame(g, scripthost.frame, game_region, output_region);
+		}
+		
+		protected virtual void OnDrawingareaExposeEvent (object o, Gtk.ExposeEventArgs args)
+		{
+			args.RetVal = true;
+
+			switch (runstate)
+			{
+			case RunState.Nothing:
+				this.drawingarea.GdkWindow.Clear();
+				break;
+			case RunState.Playing:
+			case RunState.Stopped:
+			case RunState.Running:
+				draw_current_frame();
+				break;
+			}
 		}
 	}
 }
