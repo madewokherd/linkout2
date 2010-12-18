@@ -103,18 +103,39 @@ The lot base language supports the following functions:
  * *(if condition truepart falsepart) - If the condition is true, evaluate truepart and return its result. If the condition is false, evaluate falsepart and return its result.
  * (or . args) - If args is not a cons, return nil. Evaluate the car of the args. If the result is anything other than 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of args.
  * (and . args) - If args is not a cons, return nil. Evaluate the car of the args. If the result is anything 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of args.
+ * (not x) - Return 1 if the result is 0 or nil. Otherwise, return 0.
  * *(begin . expressions) - If the arguments are not a cons, return nil. Evaluate the car of the arguments. Do the same recursively for the cdr of the arguments (i.e. evaluate the car of the cdr and repeat for the cdr of the cdr). If the cdr is not a cons, return the result of the last thing evaluated. If nothing is evaluated, return nil. (Explanatory text: This is similar to the "begin" statement in scheme; it makes it possible to execute a list of commands in sequence.)
  * (eval x) - Return the result of evaluating x twice.
+ * *(quot . x) - Return x.
+ * (list . x) - Return x.
  * (apply x y) - Equivalent to (eval (cons x y))
- * getglobal - If the car of the arguments is a string, and it is a key in the global dictionary, return the corresponding value. Otherwise, return nil.
- * setglobal - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the global dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
- * Arithmetic operators + and * evaluate the arguments and add or multiply the cars respectively, until they encounter a cdr that is not a cons, or a car that is not a number. (A "number" in this case means either an integer or a cons of two integers. An integer will be treated as a cons of itself and 0. The car will be regarded as the whole part of the number, and the cdr will be regarded as a fractional part out of 65536, per the convention.) If they do not add or multiply any numbers, they return 0 and 1 respectively.
- * Arithmetic operators - / and % expect two numerical arguments (the car and the car of the cdr of the evaluated arguments). If one of those arguments does not exist or is not a number, they return nil. Otherwise, they are subtraction, division, and modulo respectively. Division rounds down (rather than towards 0 as many programming languages with integer arithmetic do), and the result of modulo is never negative (again, contrary to many programming languages).
- * Boolean operators <, >, <=, and >= expect two numerical arguments. They return 1 if the specified relationship is satisfied and 0 if it is not.
- * The boolean operator = returns 1 if the two values are equal and 0 if they are not. For a cons, being equal means that both the car and the cdr are equal. If a cons is recursive, it is not equal to anything, including itself.
- * cons - Return a cons of the two given evaluated arguments.
- * car - Returns the car of the given cons, or nil if that's impossible.
- * cdr - Returns the cdr of the given cons, or nil if that's impossible.
+ * (let bindings body) - Bindings is expected to be a list of items of the form (name value). For each item of that form in bindings, evaluate name and value. Then execute body with each name/value pair added to locals.
+ * (let* bindings body) - Same as let, except that later (name value) pairs are evaluated with the earlier pairs in their locals.
+ * (getlocal name) - Returns the value associated with the given name in the current locals, or nil if there is none.
+ * *(define (name . arglist) body) - Defines a custom function with the given name. This function overrides any builtin functions with the same name, with the exception that the behavior of functions defined as "equivalent to" some other expression is unchanged. When the function is called, arguments are first evaluated. If the arguments match the arglist, the body is evaluated with the argument names added to locals.
+ * *(defineex (name . arglist) body) - Same as define, except that arguments are not evaluated when the custom function is called.
+ * (getglobal name) - If name is a string, and it is a key in the global dictionary, return the corresponding value. Otherwise, return nil.
+ * (setglobal name value) - Set the given name in the globals dictionary to the given value. Always return nil.
+ * (delglobal name) - Equivalent to (setglobal name ())
+ * (+ . args) - Start with 0. Add (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last addition.
+ * (* . args) - Start with 1. Multiply (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last multiplication.
+ * (bitwise-not x) - If x is a number, return the number where every bit is set differently. Otherwise, return nil.
+ * (bitwise-and . args) Start with (bitwise-not 0). Take the bitwise and of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last and.
+ * (bitwise-or . args) Start with 0. Take the bitwise or of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last or.
+ * (bitwise-xor . args) Start with 0. Take the bitwise exclusive or of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last exclusive or.
+ * (trunc x) - Equivalent to (bitwise-and x 0xffffffff)
+ * (- a b) - Return the result of subtracting b from a, or nil if either b or a is not a number.
+ * (/ a b) - Return the result of dividing a by b, or nil if either b or a is not a number. Round down if the result cannot be expressed exactly (rather than towards 0 as many programming languages do with integer arithmetic).
+ * (% a b) - Equivalent to (- a (* (trunc (/ a b)) b)), or the (possibly fractional) modulo of a and b, which is between b and 0 (unlike in many programming languages).
+ * (< a b) - Return 1 if a is less than b, 0 otherwise.
+ * (> a b) - Return 1 if a is greater than b, 0 otherwise.
+ * (<= a b) - Return 1 if a is less than or equal to b, 0 otherwise.
+ * (>= a b) - Return 1 if a is greater than or equal to b, 0 otherwise.
+ * (= a b) - Return 1 if a is equal to b, 0 otherwise.
+ * (<> a b) - Return 0 if a is equal to b, 1 otherwise.
+ * (cons a b) - Return a cons of a and b.
+ * (car x) - Returns the car of x, or nil if x is not a cons.
+ * (cdr x) - Returns the cdr of x, or nil if x is not a cons.
  * sin, cos, tan, asin, acos, tan - TBD trig functions. (The results will have to be specified exactly.)
 
 Game scripts support the following functions:
