@@ -28,6 +28,8 @@ namespace LinkoutGTK
 		int frame_delay;
 		uint advance_timer;
 		
+		bool is_replay_file;
+		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
 			Application.Quit ();
@@ -86,6 +88,21 @@ namespace LinkoutGTK
 			set_state(new_state, frame_delay);
 		}
 		
+		private Atom replay_file_atom = new StringAtom("replay-file");
+		
+		public void hint (Atom args)
+		{
+			if (args.GetType() == typeof(ConsAtom))
+			{
+				Atom hint_type = args.get_car();
+				
+				if (hint_type.Equals(replay_file_atom))
+				{
+					is_replay_file = true;
+				}
+			}
+		}
+		
 		protected virtual void OnOpenActivated (object sender, System.EventArgs e)
 		{
 			FileChooserDialog dialog;
@@ -124,6 +141,10 @@ namespace LinkoutGTK
 					Locals no_locals = new Locals();
 					drawing = new LinkoutDrawing.Drawing();
 					
+					is_replay_file = false;
+					
+					scripthost.OnHint += hint;
+					
 					while (true)
 					{
 						Atom atom;
@@ -133,7 +154,10 @@ namespace LinkoutGTK
 						scripthost.eval(atom, no_locals, null);
 					}
 					
-					set_state(RunState.Running, 50);
+					if (is_replay_file)
+						set_state(RunState.Playing, 20);
+					else
+						set_state(RunState.Running, 20);
 					
 					this.drawingarea.QueueDraw();
 				}
