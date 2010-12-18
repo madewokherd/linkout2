@@ -148,6 +148,7 @@ namespace Linkout.Lisp
 					break;
 				}
 				
+				key = eval(key, locals, user_data);
 				new_locals.dict[key] = eval(expression, locals, user_data);
 				
 				assignments = assignments.get_cdr();
@@ -188,6 +189,7 @@ namespace Linkout.Lisp
 					break;
 				}
 				
+				key = eval(key, new_locals, user_data);
 				new_locals.dict[key] = eval(expression, new_locals, user_data);
 				
 				assignments = assignments.get_cdr();
