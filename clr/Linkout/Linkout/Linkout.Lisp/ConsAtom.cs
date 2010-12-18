@@ -72,5 +72,23 @@ namespace Linkout.Lisp
 			write_tail(output, cdr);
 			output.WriteByte(41); /* ) */
 		}
+		
+		public uint GetLength()
+		{
+			uint result = 1;
+			Atom rest = this.cdr;
+			
+			while (rest.GetType() == typeof(ConsAtom))
+			{
+				result++;
+				rest = rest.get_cdr();
+			}
+			
+			if (rest.atomtype != AtomType.Nil)
+				// Not a valid list.
+				return 0;
+
+			return result;
+		}
 	}
 }

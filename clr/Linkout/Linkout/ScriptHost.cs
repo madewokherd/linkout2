@@ -39,11 +39,16 @@ namespace Linkout
 		
 		private readonly StringAtom name_box = new StringAtom("box");
 		
-		public void advance_frame()
+		public void advance_frame(Atom[] external_events)
 		{
-			last_frame = frame = frame.advance();
+			last_frame = frame = frame.advance(external_events);
 			
 			commit_next_frame();
+		}
+		
+		public void advance_frame()
+		{
+			advance_frame(null);
 		}
 		
 		public Atom func_frame(Atom args, Locals locals, object user_data)
@@ -116,26 +121,24 @@ namespace Linkout
 
 		public Atom func_advance(Atom args, Locals locals, object user_data)
 		{
-			int advance_count = 1, i;
-			
-			args = eval_args(args, locals, user_data);
+			int i;
+			Atom[] external_events = null;
 			
 			if (frame == null)
 				throw new InvalidOperationException("Create a frame first");
 			
 			if (args.atomtype == AtomType.Cons)
 			{
-				Atom count_atom = args.get_car();
-				if (count_atom.atomtype == AtomType.FixedPoint)
+				external_events = new Atom[((ConsAtom)args).GetLength()];
+				
+				for (i=0; i<external_events.Length; i++)
 				{
-					advance_count = (int)(count_atom.get_fixedpoint() >> 16);
+					external_events[i] = args.get_car();
+					args = args.get_cdr();
 				}
 			}
-			
-			for (i=0; i<advance_count; i++)
-			{
-				advance_frame();
-			}
+
+			advance_frame(external_events);
 			
 			return NilAtom.nil;
 		}

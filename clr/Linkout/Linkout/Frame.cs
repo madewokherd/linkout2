@@ -49,6 +49,16 @@ namespace Linkout
 		private LinkedList<GameObject> objectlist;
 		private Dictionary<long, LinkedListNode<GameObject>> objectdict;
 		
+		private Atom[] priv_external_events;
+		
+		public Atom[] external_events
+		{
+			get
+			{
+				return priv_external_events;
+			}
+		}
+		
 		/* History */
 		private int prev_frame_hash;
 		private Frame[] prev_frames;
@@ -131,13 +141,25 @@ namespace Linkout
 			return result;
 		}
 		
-		private void priv_advance(Frame prev_frame)
+		private void priv_advance(Frame prev_frame, Atom[] external_events)
 		{
 			LinkedListNode<GameObject> node;
 			
 			priv_frame_number += 1;
 			
 			this.prev_frames = build_frame_history(prev_frame);
+			
+			if (external_events != null)
+			{
+				Locals locals = new Locals();
+				
+				priv_external_events = external_events;
+				
+				foreach (Atom external_event in external_events)
+				{
+					eval(external_event, locals, this);
+				}
+			}
 			
 			for (node = objectlist.Last; node != null; node = node.Previous)
 			{
@@ -152,15 +174,20 @@ namespace Linkout
 			commit();
 		}
 		
-		public Frame advance()
+		public Frame advance(Atom[] external_events)
 		{
 			Frame new_frame = copy();
 			
-			new_frame.priv_advance(this);
+			new_frame.priv_advance(this, external_events);
 			
 			return new_frame;
 		}
 
+		public Frame advance()
+		{
+			return advance(null);
+		}
+		
 		public Frame get_previous_frame(uint frameid)
 		{
 			if (frameid >= this.priv_frame_number)
@@ -206,10 +233,13 @@ namespace Linkout
 		public static Atom func_setown(Atom args, Locals locals, object user_data)
 		{
 			Frame self = (Frame)user_data;
-			Atom objectidatom = locals.dict[new StringAtom("self")];
+			Atom objectidatom;
 			LinkedListNode<GameObject> obj_node;
 			
 			args = self.eval_args(args, locals, user_data);
+			
+			if (!locals.dict.TryGetValue(new StringAtom("self"), out objectidatom))
+				return NilAtom.nil;
 			
 			if (objectidatom.atomtype == AtomType.FixedPoint &&
 			    self.objectdict.TryGetValue(objectidatom.get_fixedpoint(), out obj_node))

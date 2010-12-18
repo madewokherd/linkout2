@@ -1,0 +1,13 @@
+(frame (box))
+
+(advance 1 (let ((self 0)) (setown a 1)))
+
+(frame (box
+  (a 1)))
+
+(advance (let ((self 0)) (setown b 2)))
+
+(frame (box
+  (a 1)
+  (b 2)))
+

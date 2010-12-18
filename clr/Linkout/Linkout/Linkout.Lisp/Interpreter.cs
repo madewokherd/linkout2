@@ -8,6 +8,7 @@ namespace Linkout.Lisp
 		{
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("+")] = func_plus;
+			functions[new StringAtom("let")] = func_let;
 		}
 
 		public Interpreter (Dictionary<Atom, LispFunction> functions)
@@ -35,6 +36,46 @@ namespace Linkout.Lisp
 			{
 			}
 			return new FixedPointAtom(result);
+		}
+		
+		public Atom func_let(Atom args, Locals locals, object user_data)
+		{
+			Atom assignments;
+			Atom inner_block;
+			Locals new_locals = new Locals(locals);
+			
+			try
+			{
+				assignments = args.get_car();
+				inner_block = args.get_cdr().get_car();
+			}
+			catch (NotSupportedException)
+			{
+				return NilAtom.nil;
+			}
+			
+			while (assignments.atomtype == AtomType.Cons)
+			{
+				Atom assignment = assignments.get_car();
+				Atom key;
+				Atom expression;
+				
+				try
+				{
+					key = assignment.get_car();
+					expression = assignment.get_cdr().get_car();
+				}
+				catch (NotSupportedException)
+				{
+					break;
+				}
+				
+				new_locals.dict[key] = eval(expression, locals, user_data);
+				
+				assignments = assignments.get_cdr();
+			}
+			
+			return eval(inner_block, new_locals, user_data);
 		}
 
 		public Atom eval(Atom args, Locals locals, object user_data)

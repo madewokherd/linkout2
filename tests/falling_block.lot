@@ -12,7 +12,16 @@
        (height 5)
        (OnFrame (setown y (+ (getown y) 1)))))
 
-(advance 10)
+(advance)
+(advance)
+(advance)
+(advance)
+(advance)
+(advance)
+(advance)
+(advance)
+(advance)
+(advance)
 
 (frame
   (box (x 0)
