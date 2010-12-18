@@ -37,6 +37,11 @@ namespace Linkout.Lisp
 		{
 			throw new NotSupportedException();
 		}
+		
+		public override bool is_true ()
+		{
+			return false;
+		}
 
 		public override int GetHashCode ()
 		{

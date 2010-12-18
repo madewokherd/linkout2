@@ -35,6 +35,11 @@ namespace Linkout.Lisp
 		{
 			throw new NotSupportedException();
 		}
+		
+		public override bool is_true ()
+		{
+			return true;
+		}
 	
 		public override bool Equals (object obj)
 		{

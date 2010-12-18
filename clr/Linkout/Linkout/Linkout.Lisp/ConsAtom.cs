@@ -32,6 +32,11 @@ namespace Linkout.Lisp
 			return this.cdr;
 		}
 
+		public override bool is_true ()
+		{
+			return true;
+		}
+
 		public override bool Equals (object obj)
 		{
 			if (obj.GetType() != this.GetType())

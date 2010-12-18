@@ -18,6 +18,8 @@ namespace Linkout.Lisp
 
 		public abstract Atom get_cdr();
 
+		public abstract bool is_true();
+		
 		private class FoundDotException : Exception
 		{
 		}
@@ -77,8 +79,16 @@ namespace Linkout.Lisp
 			close_paren = false;
 			
 			current_byte = input.ReadByte();
-			while (current_byte == ' ' || current_byte == '\t' || current_byte == '\r' || current_byte == '\n')
+			while (current_byte == ' ' || current_byte == '\t' || current_byte == '\r' || current_byte == '\n' || current_byte == ';')
+			{
+				if (current_byte == ';')
+				{
+					// Single-line comment
+					while (current_byte != -1 && current_byte != '\n' && current_byte != '\r')
+						current_byte = input.ReadByte();
+				}
 				current_byte = input.ReadByte();
+			}
 			
 			if (current_byte == -1)
 				return null;

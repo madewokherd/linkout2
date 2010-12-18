@@ -10,6 +10,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
+			functions[new StringAtom("if")] = func_if;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
 			functions[new StringAtom("quot")] = func_quot;
@@ -29,6 +30,32 @@ namespace Linkout.Lisp
 
 		protected Dictionary<Atom, CustomLispFunction> custom_functions;
 
+		public Atom[] get_n_args(Atom args, uint n, string function_name)
+		{
+			Atom[] result = new Atom[n];
+			Atom remaining_args = args;
+			uint i;
+			
+			try
+			{
+				for (i=0; i<n; i++)
+				{
+					result[i] = remaining_args.get_car();
+					remaining_args = remaining_args.get_cdr();
+				}
+			}
+			catch (NotSupportedException)
+			{
+				Console.WriteLine("Expected {0} arguments to {1}, got {2}", n, function_name, args);
+				return null;
+			}
+			
+			if (remaining_args.atomtype != AtomType.Nil)
+				Console.WriteLine("Expected {0} arguments to {1}, got extra arguments: {2}", n, function_name, args);
+			
+			return result;
+		}
+		
 		public Atom func_plus(Atom args, Locals locals, object user_data)
 		{
 			long result = 0;
@@ -71,6 +98,22 @@ namespace Linkout.Lisp
 			add_custom_function(args, false);
 			
 			return NilAtom.nil;
+		}
+		
+		public Atom func_if(Atom args, Locals locals, object user_data)
+		{
+			Atom[] arglist = get_n_args(args, 3, "if");
+			Atom condition_result;
+			
+			if (arglist == null)
+				return NilAtom.nil;
+			
+			condition_result = eval(arglist[0], locals, user_data);
+			
+			if (condition_result.is_true())
+				return eval(arglist[1], locals, user_data);
+			else
+				return eval(arglist[2], locals, user_data);
 		}
 		
 		public Atom func_let(Atom args, Locals locals, object user_data)

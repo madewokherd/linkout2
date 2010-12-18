@@ -29,6 +29,11 @@ namespace Linkout.Lisp
 		{
 			throw new NotSupportedException();
 		}
+		
+		public override bool is_true ()
+		{
+			return this.int_value != 0;
+		}
 	
 		public override bool Equals (object obj)
 		{
