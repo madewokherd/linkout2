@@ -10,6 +10,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
+			functions[new StringAtom("quot")] = func_quot;
 		}
 
 		public Interpreter (Dictionary<Atom, LispFunction> functions)
@@ -117,6 +118,11 @@ namespace Linkout.Lisp
 			}
 			
 			return eval(inner_block, new_locals, user_data);
+		}
+		
+		public Atom func_quot(Atom args, Locals locals, object user_data)
+		{
+			return args;
 		}
 
 		public Atom eval(Atom args, Locals locals, object user_data)
