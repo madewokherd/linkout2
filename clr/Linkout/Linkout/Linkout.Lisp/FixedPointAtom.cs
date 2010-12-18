@@ -83,6 +83,10 @@ namespace Linkout.Lisp
 				}
 			}
 		}
+		
+		public static FixedPointAtom Zero = new FixedPointAtom(0);
+
+		public static FixedPointAtom One = new FixedPointAtom(0x10000);
 	}
 }
 

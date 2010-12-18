@@ -8,11 +8,13 @@ namespace Linkout.Lisp
 		{
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("+")] = func_plus;
+			functions[new StringAtom("=")] = func_eq;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("if")] = func_if;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
+			functions[new StringAtom("or")] = func_or;
 			functions[new StringAtom("quot")] = func_quot;
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
@@ -72,6 +74,18 @@ namespace Linkout.Lisp
 			{
 			}
 			return new FixedPointAtom(result);
+		}
+		
+		public Atom func_eq(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 2, "=");
+			
+			if (arglist[0].Equals(arglist[1]))
+				return FixedPointAtom.One;
+			else
+				return FixedPointAtom.Zero;
 		}
 		
 		public virtual void add_custom_function(Atom args, bool eval_args_first)
@@ -196,6 +210,23 @@ namespace Linkout.Lisp
 			}
 			
 			return eval(inner_block, new_locals, user_data);
+		}
+		
+		public Atom func_or(Atom args, Locals locals, object user_data)
+		{
+			Atom result = NilAtom.nil;
+			
+			while (args.atomtype == AtomType.Cons)
+			{
+				result = eval(args.get_car(), locals, user_data);
+				
+				if (result.is_true())
+					break;
+				
+				args = args.get_cdr();
+			}
+			
+			return result;
 		}
 		
 		public Atom func_quot(Atom args, Locals locals, object user_data)

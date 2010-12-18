@@ -5,3 +5,31 @@
 ; if has no effect without an elsepart
 (if (abort) (abort))
 
+(define (assert x) (or x (abort)))
+
+(define (expect x y) (assert (= x y)))
+
+(define (expect-ne x y) (if (= x y) (abort) ()))
+
+(expect 1 1)
+
+(expect-ne 1 0)
+
+(expect 0 0)
+
+(expect a a)
+
+(expect () ())
+
+(expect (quot a b c) (quot a b c))
+
+(expect (or 3 (assert 0)) 3)
+
+(expect 0 (or () 0))
+
+(expect () (or 0 ()))
+
+(expect () (or))
+
+(expect 5 (or 5))
+
