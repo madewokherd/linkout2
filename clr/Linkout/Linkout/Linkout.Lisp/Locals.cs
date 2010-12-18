@@ -6,19 +6,19 @@ namespace Linkout.Lisp
 	{
 		public Dictionary<Atom, Atom> dict;
 		
-		public readonly Locals parent;
-		
 		public Locals ()
 		{
 			dict = new Dictionary<Atom, Atom>();
-			parent = null;
 		}
 
 		public Locals (Locals parent)
 		{
-			// FIXME: We should probably copy rather than link to the parent.
-			dict = new Dictionary<Atom, Atom>();
-			this.parent = parent;
+			dict = new Dictionary<Atom, Atom>(parent.dict);
+		}
+
+		public Locals (Dictionary<Atom, Atom> dict)
+		{
+			this.dict = dict;
 		}
 		
 		private static void pattern_match(Dictionary<Atom, Atom> names, Atom pattern, Atom atom)
@@ -40,10 +40,16 @@ namespace Linkout.Lisp
 			
 			pattern_match(result.dict, pattern, atom);
 			
-			if (result.dict.Count != 0)
-				return result;
-			else
-				return parent;
+			return result;
+		}
+		
+		public Atom get_value(Atom name)
+		{
+			Atom result = NilAtom.nil;
+			
+			dict.TryGetValue(name, out result);
+			
+			return result;
 		}
 	}
 }

@@ -9,8 +9,10 @@ namespace Linkout.Lisp
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("=")] = func_eq;
+			functions[new StringAtom("and")] = func_and;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
+			functions[new StringAtom("get")] = func_get;
 			functions[new StringAtom("if")] = func_if;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
@@ -32,6 +34,8 @@ namespace Linkout.Lisp
 
 		protected Dictionary<Atom, CustomLispFunction> custom_functions;
 
+		private static readonly bool trace_call = System.Environment.GetEnvironmentVariable("LINKOUT_TRACE") != null;
+		
 		public Atom[] get_n_args(Atom args, uint n, string function_name)
 		{
 			Atom[] result = new Atom[n];
@@ -88,6 +92,23 @@ namespace Linkout.Lisp
 				return FixedPointAtom.Zero;
 		}
 		
+		public Atom func_and(Atom args, Locals locals, object user_data)
+		{
+			Atom result = NilAtom.nil;
+			
+			while (args.atomtype == AtomType.Cons)
+			{
+				result = eval(args.get_car(), locals, user_data);
+				
+				if (!result.is_true())
+					break;
+				
+				args = args.get_cdr();
+			}
+			
+			return result;
+		}
+		
 		public virtual void add_custom_function(Atom args, bool eval_args_first)
 		{
 			CustomLispFunction f;
@@ -112,6 +133,19 @@ namespace Linkout.Lisp
 			add_custom_function(args, false);
 			
 			return NilAtom.nil;
+		}
+		
+		public Atom func_get(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 1, "get");
+			Atom result = NilAtom.nil;
+			
+			if (arglist != null)
+				result = locals.get_value(arglist[0]);
+			
+			return result;
 		}
 		
 		public Atom func_if(Atom args, Locals locals, object user_data)
@@ -252,17 +286,24 @@ namespace Linkout.Lisp
 			{
 				Atom function_name = args.get_car();
 				Atom function_args = args.get_cdr();
+				Atom result;
 				LispFunction func;
 				CustomLispFunction custom_func;
+				if (trace_call)
+					System.Console.Error.WriteLine("CALL {0}", args);
 				if (custom_functions.TryGetValue(function_name, out custom_func))
 				{
-					return eval_custom(custom_func, args, locals, user_data);
+					result = eval_custom(custom_func, function_args, locals, user_data);
 				}
-				if (functions.TryGetValue(function_name, out func))
+				else if (functions.TryGetValue(function_name, out func))
 				{
-					return func(function_args, locals, user_data);
+					result = func(function_args, locals, user_data);
 				}
-				throw new Exception(String.Format("Function {0} not found", function_name));
+				else
+					throw new Exception(String.Format("Function {0} not found", function_name));
+				if (trace_call)
+					System.Console.Error.WriteLine("RET {0} {1}", args, result);
+				return result;
 			}
 			else
 				return args;
