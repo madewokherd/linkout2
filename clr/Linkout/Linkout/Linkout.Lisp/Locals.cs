@@ -16,6 +16,7 @@ namespace Linkout.Lisp
 
 		public Locals (Locals parent)
 		{
+			// FIXME: We should probably copy rather than link to the parent.
 			dict = new Dictionary<Atom, Atom>();
 			this.parent = parent;
 		}
