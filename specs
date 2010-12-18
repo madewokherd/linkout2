@@ -5,10 +5,10 @@ Design goals:
  * The exact state of the game at any frame is serializable.
  * The exact state of the game at any frame is hashable, and the resulting hash is the same regardless of the machine or engine version that calculates it.
  * The state at each frame is fully determined by the state at the previous frame and a list of "external events" from the application. The most common example of an "external event" would likely be the buttons pressed by the user.
- * All games can generate a full gameplay log (a "replay") including the state at the first frame, the list of external events between each frame, and the state of the last frame. The game engine can, given no other information, calculate all frames in the game, and verify that the last frame matches the one saved in the log.
+ * All games can generate a full gameplay log (a "replay") including the state at the first frame, the list of external events between each frame, and optionally states and/or hashes of other frames, for verification purposes. The game engine can, given no other information, calculate all frames in the game, and verify that the extra information matches the calculation.
  * Once the first "stable" version is released, further versions shall never break a replay. That is, the final frame will always be the same given the same initial frame and external events. To ensure this, a test suite of replays will be run before each release.
  * The "vocabulary" of objects that can exist in a frame's state is expressive enough to create a variety of action games but probably not quite expressive enough to be useful as a general-purpose programming language.
- * Once the initial frame is created and assuming all external events are understood, error conditions should be very unlikely. That is, as long as the engine understands all elements in a frame and all external events, it should be able to calculate the next frame. This means we prefer to continue with glitches when the program does something that's probably wrong, rather than abort. (Glitches are more fun anyway. :)
+ * Once the initial frame is created and assuming all external events are understood, error conditions should be very unlikely. That is, as long as the engine understands all elements in a frame and all external events, it should be able to calculate the next frame. This means we prefer to continue with glitches when the program does something that's probably wrong, rather than abort, but we should warn. (Glitches are more fun anyway. :)
  * It should be possible to program behaviors generally. For example, it should be possible to create multiple object types with an attribute of "friendly ammunition", which would generally damage enemies but not friendly characters. Instead of each type of enemy being programmed for each type of ammunition separately (or each type of ammunition being programmed for each type of enemy), enemies should respond generally to collisions of objects of that type.
  * Situations in which multiple "solid" objects occupy the same spot, such as a character being embedded inside a wall, should be unlikely, but not impossible, in "natural" circumstances. This means that a moving object's entire path must be checked as it moves; situations where objects can pass through other objects because they are moving too fast are undesirable.
  * However, in some cases it is desirable for an action to only occur AFTER an object has moved into the appropriate position. An example might be a type of brick that is fatal to a character ("lava"). It's reasonable for a platform to exist at the same height as the lava, and a character standing partially on that platform (and partially above the lava) should not be harmed.
@@ -22,7 +22,7 @@ Applications will generally create the first frame by running a program in a lan
 Once the first frame is created, the application should periodically ask the engine to calculate new frames, which it then displays.
 The process of creating the first frame, and the process of calculating new frames, will generate events called "hints", which the application is free to use or ignore.
 Typical first frame hints will inform the application of the expected input events and of how certain sets of objects should be rendered.
-Events created from calculating frames might inform the application that the game has ended, and whether the player has won or lost.
+Hints created from calculating frames might inform the application that the game has ended, and whether the player has won or lost.
 When an application requests the calculation of new frames, it also includes a set of "external events" that modify the game state.
 Typically, external events are used to inform the frame of user input, but in principle they can be used to make any kind of change to the game state.
 External events are the only opportunity the application has to change the frame state once the game has begun.
@@ -33,7 +33,7 @@ A set of conventional meanings for "hints" and "external events" will be include
 
 Each frame contains the following information:
  * A set of user-defined functions. This set is determined at the creation of the first frame and cannot be modified later.
- * A frame number. Typically, the first frame will be 0, but an application may create an initial frame with a different number. This may be useful to implement a save/resume feature.
+ * A frame number. The first frame will always be number 0.
  * A random seed.
  * A general dictionary of atoms to atoms. An "atom" may be a fixed point number (with a 32-bit whole part and a 16-bit fractional part), an 8-bit string, the special value nil, or a "cons", which contains two references to atoms, named "car" and "cdr". This provides a good amount of flexibility while being easy to serialize and deserialize.
  * A list of "objects". Each object has an ascii string type that has special meaning to the engine (if it doesn't, the engine will fail), and its own dictionary of ascii strings to atoms. The type determines how (and if) the engine does collision detection for the object. Each type may store its own set of data in addition to the dictionary. The most basic type is a "box", which occupies a rectangular region of the screen.
@@ -42,7 +42,7 @@ Each frame contains the following information:
 
 In order to calculate the next frame based on an existing frame, the engine will do the following:
  * Create an internal copy of the frame.
- * Apply each external event. Generally an external event will be a specific modification to the game state, such as deleting a specific object.
+ * Apply each external event. External events take the form of code that is evaluated in the frame.
  * Execute the code in the global "BeforeUpdate" attribute.
  * For each object, in the reverse of the order the objects were added, execute the code in the object's OnFrame attribute. (Rationale: Some update functions will result in the creation of new objects. These new objects should not be updated until the NEXT frame, and the easiest way to ensure this is to enforce a general rule that newer objects are updated first. If no specific order were specified, different implementations could update the same frame and get a different result.)
  * Execute the code in the global "AfterUpdate" attribute.
@@ -51,13 +51,6 @@ In order to calculate the next frame based on an existing frame, the engine will
 Should the engine ever be unable to calculate the next frame, it will return failure to the application.
 This document will refer to the failure to calculate the frame as "aborting".
 The nature of this failing result, and what information it includes, are unspecified.
-
-An application may ask for any the following types external events:
- * Set a specific value in the general dictionary of atoms.
- * Reset a specific value in the general dictionary.
- * Destroy an existing object.
- * Modify an existing object by setting or resetting a specific value in its dictionary, or by using a command specific to the object's type.
- * Create a new object.
 
 While it's possible for an application to create gameplay rules by inspecting the state at each frame and deciding, based only on that state, on a set of external events to apply, this is not recommended.
 Gameplay rules should be enforced by objects that exist inside the game.
@@ -72,7 +65,6 @@ An atom may be any of the following types:
 
 Atoms are immutable, and a cons can never be recursive.
 
-A co-ordinate, by convention, is a cons of two numbers.
 In general, an object placed at a specific pixel should have a fractional part of 32768 (or one half), so that the whole part will be the same if the object moves slightly in any direction.
 In other words, the object should be placed in the center of the pixel rather than a corner.
 
@@ -93,21 +85,41 @@ The engine understands the following types:
  * For each pair of 32-bit values, the tilemap stores a 32-bit integer. (A tilemap containing only 0's should in reality not occupy any memory, and a tilemap where all x and y coordinates are between, say, 0 and 3 inclusive, should probably occupy no more than 16 "slots" of memory.)
  * For each pair of integers tx and ty, where the tilemap has stored a non-zero 32-bit integer, that integer determines the collision behavior of pixels where x is in the range [x + tx*tilewidth, x + (tx+1)*tilewidth) and y is in the range [y + ty*tileheight, y + (ty+1)*tileheight). (If tileheight or tilewidth is not positive, those ranges are empty.) The collision mask is determined by the ("mask" id) attribute of the tilemap, where id is the integral id stored for those pixels. The pixel type of pixels in the collision mask is determined by the ("treatas" id m) attribute of the tilemap, where id is the value stored in the tilemap, and m is the value of the pixel in the collision mask.
 
-In order to evaluate an atom, the engine does the following:
+In order to evaluate an atom, the Lot interpreter does the following:
  * If the atom is not a cons, return that atom as is.
  * If the car of the cons is not a string, return nil.
  * If the car of the cons is a string that the engine does not recognize, abort. (Rationale: New versions may include new commands. When old versions encounter these commands, they should report a sensible error saying that the engine is too old, rather than fail later in a strange way because some command was missing.)
- * If the car of the cons is a recognized string, follow the instructions below. The cdr of the cons will be referred to below as the "arguments".
+ * If the car of the cons is a recognized string, and the arguments patch the pattern for that function, follow the instructions below.
 
-The engine supports the following commands:
- * begin - If the arguments are not a cons, return nil. Evaluate the car of the arguments. Do the same recursively for the cdr of the arguments (i.e. evaluate the car of the cdr and repeat for the cdr of the cdr). If the cdr is not a cons, return the result of the last thing evaluated. If nothing is evaluated, return nil. (Explanatory text: This is similar to the "begin" statement in scheme; it makes it possible to execute a list of commands in sequence.)
- * or - If the arguments are not a cons, return nil. Evaluate the car of the arguments. If the result is anything other than 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of the arguments.
- * and - If the arguments are not a cons, return nil. Evaluate the car of the arguments. If the result is 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of the arguments.
- * if - If the arguments are not a cons, return nil. Evaluate the car of the arguments. If the cdr of the arguments is not a cons, return nil (AFTER evaluating the car). If the result is anything other than 0 or nil, return the result of evaluating the car of the cdr of the arguments. Otherwise, return the result of evaluating the car of the cdr of the cdr of the arguments, or nil if the cdr of the cdr of the arguments is not a cons.
- * eval - Return the result of evaluating the car of the arguments twice, or nil if the arguments is not a cons.
+Functions are listed below as a cons whose car is the name of the function.
+For those functions not marked with an asterisk, the argument list (the cdr of the cons being evaluated) is first evaluated.
+Evaluating an argument list is the same as a regular evaluation, except that a cons evaluates to a cons of the result of evaluating its car as an expression and its cdr as an argument list.
+The function's expected argument list (the cdr of the functions listed below) is taken as a pattern against which the actual arguments are matched.
+If a value cannot be found for each string in the expected argument list, the expression returns nil, and a warning may be emitted.
+If the expected argument list has nil where the arguments have some other value, the extra value is ignored, and a warning may be emitted.
+The behavior and result of the expression is then determined by the particular function called.
+
+The lot base language supports the following functions:
+ * *(if condition truepart falsepart) - If the condition is true, evaluate truepart and return its result. If the condition is false, evaluate falsepart and return its result.
+ * (or . args) - If args is not a cons, return nil. Evaluate the car of the args. If the result is anything other than 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of args.
+ * (and . args) - If args is not a cons, return nil. Evaluate the car of the args. If the result is anything 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of args.
+ * *(begin . expressions) - If the arguments are not a cons, return nil. Evaluate the car of the arguments. Do the same recursively for the cdr of the arguments (i.e. evaluate the car of the cdr and repeat for the cdr of the cdr). If the cdr is not a cons, return the result of the last thing evaluated. If nothing is evaluated, return nil. (Explanatory text: This is similar to the "begin" statement in scheme; it makes it possible to execute a list of commands in sequence.)
+ * (eval x) - Return the result of evaluating x twice.
+ * (apply x y) - Equivalent to (eval (cons x y))
  * getglobal - If the car of the arguments is a string, and it is a key in the global dictionary, return the corresponding value. Otherwise, return nil.
  * setglobal - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the global dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
- * delglobal - If the car of the arguments is a string, and it is a key in the global dictionary, remove it from the global dictionary. Always return nil.
+ * Arithmetic operators + and * evaluate the arguments and add or multiply the cars respectively, until they encounter a cdr that is not a cons, or a car that is not a number. (A "number" in this case means either an integer or a cons of two integers. An integer will be treated as a cons of itself and 0. The car will be regarded as the whole part of the number, and the cdr will be regarded as a fractional part out of 65536, per the convention.) If they do not add or multiply any numbers, they return 0 and 1 respectively.
+ * Arithmetic operators - / and % expect two numerical arguments (the car and the car of the cdr of the evaluated arguments). If one of those arguments does not exist or is not a number, they return nil. Otherwise, they are subtraction, division, and modulo respectively. Division rounds down (rather than towards 0 as many programming languages with integer arithmetic do), and the result of modulo is never negative (again, contrary to many programming languages).
+ * Boolean operators <, >, <=, and >= expect two numerical arguments. They return 1 if the specified relationship is satisfied and 0 if it is not.
+ * The boolean operator = returns 1 if the two values are equal and 0 if they are not. For a cons, being equal means that both the car and the cdr are equal. If a cons is recursive, it is not equal to anything, including itself.
+ * cons - Return a cons of the two given evaluated arguments.
+ * car - Returns the car of the given cons, or nil if that's impossible.
+ * cdr - Returns the cdr of the given cons, or nil if that's impossible.
+ * sin, cos, tan, asin, acos, tan - TBD trig functions. (The results will have to be specified exactly.)
+
+Game scripts support the following functions:
+
+Frames support the following functions:
  * getown - If the car of the arguments is a string, and it is a key in the current object's dictionary, return the corresponding value. Otherwise, return nil.
  * setown - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the current object's dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
  * delown - If the car of the arguments is a string, and it is a key in the current object's dictionary, remove it from the current object's dictionary. Always return nil.
@@ -128,37 +140,4 @@ The engine supports the following commands:
  * (stop) - When evaluated before a collision, prevent the object that would move from moving. Return nil.
  * die - Mark the current object for destruction. Objects that are marked for destruction return no pixels for collision detection purposes, and move commands behave as if their dx and dy attributes are 0. The object will be destroyed when the engine is no longer evaluating code.
  * kill - Mark the other object for destruction. Objects that are marked for destruction return no pixels for collision detection purposes, and move commands behave as if their dx and dy attributes are 0. The object will be destroyed when the engine is no longer evaluating code.
- * Arithmetic operators + and * evaluate the arguments and add or multiply the cars respectively, until they encounter a cdr that is not a cons, or a car that is not a number. (A "number" in this case means either an integer or a cons of two integers. An integer will be treated as a cons of itself and 0. The car will be regarded as the whole part of the number, and the cdr will be regarded as a fractional part out of 65536, per the convention.) If they do not add or multiply any numbers, they return 0 and 1 respectively.
- * Arithmetic operators - / and % expect two numerical arguments (the car and the car of the cdr of the evaluated arguments). If one of those arguments does not exist or is not a number, they return nil. Otherwise, they are subtraction, division, and modulo respectively. Division rounds down (rather than towards 0 as many programming languages with integer arithmetic do), and the result of modulo is never negative (again, contrary to many programming languages).
- * Boolean operators <, >, <=, and >= expect two numerical arguments. They return 1 if the specified relationship is satisfied and 0 if it is not.
- * The boolean operator = returns 1 if the two values are equal and 0 if they are not. For a cons, being equal means that both the car and the cdr are equal. If a cons is recursive, it is not equal to anything, including itself.
- * cons - Return a cons of the two given evaluated arguments.
- * car - Returns the car of the given cons, or nil if that's impossible.
- * cdr - Returns the cdr of the given cons, or nil if that's impossible.
- * sin, cos, tan, asin, acos, tan - TBD trig functions. (The results will have to be specified exactly.)
-
-Applications may choose to implement macro expansion. This is not part of the engine, and macros will be completely absent from game state and from replays. Nonetheless, here is a set of standard macros:
-
-(macro (move)
-  (begin
-    (setown mdx (getown dx))
-    (setown mdy (getown dy))
-    (updatepos (getown BeforeCollide) (getown AfterCollide) BeforeCollide AfterCollide)))
-
-(macro (hard-stop)
-  (begin
-    (if (iammoving)
-        (begin (setown mdx 0) (setown mdy 0))
-        (begin (setother mdx 0) (setother mdy 0)))
-    (stop)))
-
-(macro (gravity)
- (begin
-   (setown dx (+ (getown dx) (getglobal gravity_ax)))
-   (setown dy (+ (getown dy) (getglobal gravity_ay)))))
-
-(macro (gravity multiplier)
- (begin
-   (setown dx (+ (getown dx) (* (getglobal gravity_ax) multiplier)))
-   (setown dy (+ (getown dy) (* (getglobal gravity_ay) multiplier)))))
 
