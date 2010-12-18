@@ -47,3 +47,17 @@
 
 (expect 5 (and 1 5))
 
+(expect 0 (not 5))
+
+(expect 0 (not a))
+
+(expect 0 (not (quot 0 0)))
+
+(expect 1 (not 0))
+
+(expect 1 (not ()))
+
+(expect 1 (not (+ 0 0)))
+
+(expect () (not))
+

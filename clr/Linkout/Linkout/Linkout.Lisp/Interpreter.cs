@@ -17,6 +17,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
 			functions[new StringAtom("or")] = func_or;
+			functions[new StringAtom("not")] = func_not;
 			functions[new StringAtom("quot")] = func_quot;
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
@@ -261,6 +262,25 @@ namespace Linkout.Lisp
 			}
 			
 			return result;
+		}
+		
+		public Atom func_not(Atom args, Locals locals, object user_data)
+		{
+			Atom[] arglist;
+			
+			args = eval_args(args, locals, user_data);
+			
+			arglist = get_n_args(args, 1, "not");
+			
+			if (arglist != null)
+			{
+				if (arglist[0].is_true())
+					return FixedPointAtom.Zero;
+				else
+					return FixedPointAtom.One;
+			}
+			else
+				return NilAtom.nil;
 		}
 		
 		public Atom func_quot(Atom args, Locals locals, object user_data)
