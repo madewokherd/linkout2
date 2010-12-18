@@ -1,9 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Linkout.Lisp;
 namespace Linkout
 {
-	public sealed class Frame : Interpreter
+	public sealed class Frame : Interpreter, IEnumerable<GameObject>
 	{
 		private void set_functions()
 		{
@@ -276,6 +277,17 @@ namespace Linkout
 			message = "";
 			return true;
 		}
+		
+		IEnumerator IEnumerable.GetEnumerator ()
+		{
+			return (IEnumerator)GetEnumerator();
+		}
+		
+		public IEnumerator<GameObject> GetEnumerator ()
+		{
+			LinkedListEnumerator<GameObject> result = new LinkedListEnumerator<GameObject>(objectlist.First);
+			
+			return result;
+		}
 	}
 }
-

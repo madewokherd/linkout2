@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using Mono.Unix;
 using Gtk;
+using Gtk.DotNet;
 using Linkout;
 using Linkout.Lisp;
+using LinkoutDrawing;
 
 namespace LinkoutGTK
 {
@@ -16,6 +19,7 @@ namespace LinkoutGTK
 		}
 	
 		ScriptHost scripthost;
+		LinkoutDrawing.Drawing drawing;
 		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
@@ -64,6 +68,7 @@ namespace LinkoutGTK
 				{
 					scripthost = new ScriptHost();
 					Locals no_locals = new Locals();
+					drawing = new LinkoutDrawing.Drawing();
 					
 					while (true)
 					{
@@ -73,6 +78,8 @@ namespace LinkoutGTK
 							break;
 						scripthost.eval(atom, no_locals, null);
 					}
+					
+					this.drawingarea.QueueDraw();
 				}
 				catch (Exception exc)
 				{
@@ -84,6 +91,31 @@ namespace LinkoutGTK
 			{
 				infile.Close();
 			}
+		}
+		
+		protected virtual void OnDrawingareaExposeEvent (object o, Gtk.ExposeEventArgs args)
+		{
+			System.Drawing.Graphics g = Gtk.DotNet.Graphics.FromDrawable(this.drawingarea.GdkWindow);
+			RectangleF game_region;
+			RectangleF output_region;
+			int width;
+			int height;
+
+			args.RetVal = true;
+
+			if (scripthost == null || scripthost.frame == null)
+			{
+				this.drawingarea.GdkWindow.Clear();
+				return;
+			}
+			
+			width = this.drawingarea.Allocation.Size.Width;
+			height = this.drawingarea.Allocation.Size.Height;
+			
+			game_region = new RectangleF(0, 0, width, height);
+			output_region = new RectangleF(0, 0, width, height);
+			
+			drawing.DrawFrame(g, scripthost.frame, game_region, output_region);
 		}
 	}
 }

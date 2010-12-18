@@ -62,8 +62,9 @@
           </packing>
         </child>
         <child>
-          <widget class="Gtk.DrawingArea" id="drawingarea2">
+          <widget class="Gtk.DrawingArea" id="drawingarea">
             <property name="MemberName" />
+            <signal name="ExposeEvent" handler="OnDrawingareaExposeEvent" />
           </widget>
           <packing>
             <property name="Position">1</property>
