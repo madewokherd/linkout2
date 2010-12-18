@@ -9,6 +9,7 @@ namespace Linkout.Lisp
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("let")] = func_let;
+			functions[new StringAtom("let*")] = func_let_splat;
 		}
 
 		public Interpreter (Dictionary<Atom, LispFunction> functions)
@@ -71,6 +72,46 @@ namespace Linkout.Lisp
 				}
 				
 				new_locals.dict[key] = eval(expression, locals, user_data);
+				
+				assignments = assignments.get_cdr();
+			}
+			
+			return eval(inner_block, new_locals, user_data);
+		}
+		
+		public Atom func_let_splat(Atom args, Locals locals, object user_data)
+		{
+			Atom assignments;
+			Atom inner_block;
+			Locals new_locals = new Locals(locals);
+			
+			try
+			{
+				assignments = args.get_car();
+				inner_block = args.get_cdr().get_car();
+			}
+			catch (NotSupportedException)
+			{
+				return NilAtom.nil;
+			}
+			
+			while (assignments.atomtype == AtomType.Cons)
+			{
+				Atom assignment = assignments.get_car();
+				Atom key;
+				Atom expression;
+				
+				try
+				{
+					key = assignment.get_car();
+					expression = assignment.get_cdr().get_car();
+				}
+				catch (NotSupportedException)
+				{
+					break;
+				}
+				
+				new_locals.dict[key] = eval(expression, new_locals, user_data);
 				
 				assignments = assignments.get_cdr();
 			}
