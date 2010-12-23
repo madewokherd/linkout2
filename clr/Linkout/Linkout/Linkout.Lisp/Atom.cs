@@ -83,14 +83,6 @@ namespace Linkout.Lisp
 			close_paren = false;
 			
 			current_byte = input.ReadByte();
-			if (current_byte == -1)
-				throw new System.IO.EndOfStreamException();
-			
-			if (current_byte == ')')
-			{
-				close_paren = true;
-				return new FixedPointAtom(whole_part << 16);
-			}
 			
 			if (whole_part == 0 && current_byte == 'x')
 			{
