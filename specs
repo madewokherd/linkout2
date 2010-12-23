@@ -105,7 +105,7 @@ The lot base language supports the following functions:
  * (and . args) - If args is not a cons, return nil. Evaluate the car of the args. If the result is anything 0 or nil, or the cdr of the arguments is not a cons, return the result of that evaluation. Otherwise, do the same recursively for the cdr of args.
  * (not x) - Return 1 if the result is 0 or nil. Otherwise, return 0.
  * *(begin . expressions) - If the arguments are not a cons, return nil. Evaluate the car of the arguments. Do the same recursively for the cdr of the arguments (i.e. evaluate the car of the cdr and repeat for the cdr of the cdr). If the cdr is not a cons, return the result of the last thing evaluated. If nothing is evaluated, return nil. (Explanatory text: This is similar to the "begin" statement in scheme; it makes it possible to execute a list of commands in sequence.)
- * (eval x) - Return the result of evaluating x twice.
+ * (eval x) - Return the result of evaluating x.
  * *(quot . x) - Return x.
  * (list . x) - Return x.
  * (apply x y) - Equivalent to (eval (cons x y))

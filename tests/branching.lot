@@ -72,3 +72,7 @@
 
 (expect () (begin . x))
 
+(expect () (eval))
+
+(expect (quot quot x) (eval (quot quot quot x)))
+
