@@ -10,6 +10,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("=")] = func_eq;
 			functions[new StringAtom("and")] = func_and;
+			functions[new StringAtom("apply")] = func_apply;
 			functions[new StringAtom("begin")] = func_begin;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
@@ -111,6 +112,18 @@ namespace Linkout.Lisp
 			}
 			
 			return result;
+		}
+		
+		public Atom func_apply(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 2, "apply");
+			
+			if (arglist == null)
+				return NilAtom.nil;
+			else
+				return eval(new ConsAtom(arglist[0], arglist[1]), locals, user_data);
 		}
 		
 		public Atom func_begin(Atom args, Locals locals, object user_data)

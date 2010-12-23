@@ -78,3 +78,5 @@
 
 (expect (quot 1 2 3) (list (+ 1) (+ 1 1) (+ 1 1 1)))
 
+(expect 3 (apply and (quot (+ 1) (+ 1 1) (+ 1 1 1))))
+
