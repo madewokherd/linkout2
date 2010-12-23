@@ -117,7 +117,7 @@ namespace Linkout.Lisp
 				
 				whole_part = whole_part * number_base + digit;
 
-				if (whole_part > 0x80000000)
+				if (whole_part > 0x80000000 || (!negate && whole_part == 0x80000000))
 					throw new OverflowException();
 				
 				current_byte = input.ReadByte();
