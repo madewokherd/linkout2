@@ -115,3 +115,7 @@
 
 (display "-this-shouldn't")
 
+(expect 0x80000000 -0x80000000)
+
+(display 0x80000000) ;should display as negative
+

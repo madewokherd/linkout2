@@ -7,7 +7,7 @@ namespace Linkout.Lisp
 		
 		public FixedPointAtom (long int_value) : base(AtomType.FixedPoint)
 		{
-			this.int_value = (int_value << 8) >> 8;
+			this.int_value = (int_value << 16) >> 16;
 		}
 
 		public override long get_fixedpoint()
@@ -77,7 +77,7 @@ namespace Linkout.Lisp
 			
 			output.WriteByte(48); /* 0 */
 			output.WriteByte(120); /* x */
-			for (shift=48; shift >= precision; shift -= 4)
+			for (shift=44; shift >= precision; shift -= 4)
 			{
 				long digit = (int_value >> shift) & 0xf;
 				if (shift == 12)
