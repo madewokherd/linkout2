@@ -116,7 +116,7 @@ The lot base language supports the following functions:
  * *(define (name . arglist) body) - Defines a custom function with the given name. This function overrides any builtin functions with the same name, with the exception that the behavior of functions defined as "equivalent to" some other expression is unchanged. When the function is called, arguments are first evaluated. If the arguments match the arglist, the body is evaluated with the argument names added to locals.
  * *(defineex (name . arglist) body) - Same as define, except that arguments are not evaluated when the custom function is called.
  * (display x) - Print x to standard out, followed by a newline. Always return nil.
- * (getglobal name) - If name is a string, and it is a key in the global dictionary, return the corresponding value. Otherwise, return nil.
+ * (getglobal name) - Return the corresponding value in the globals dictionary, or nil if the name is missing.
  * (setglobal name value) - Set the given name in the globals dictionary to the given value. Always return nil.
  * (delglobal name) - Equivalent to (setglobal name ())
  * (+ . args) - Start with 0. Add (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last addition.

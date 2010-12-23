@@ -330,5 +330,13 @@ namespace Linkout
 			
 			base.add_custom_function (args, eval_args_first);
 		}
+		
+		public override void set_global (Atom name, Atom val)
+		{
+			if (priv_committed)
+				return;
+			
+			base.set_global (name, val);
+		}
 	}
 }

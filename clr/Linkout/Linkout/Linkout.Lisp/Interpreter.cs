@@ -14,25 +14,30 @@ namespace Linkout.Lisp
 			functions[new StringAtom("begin")] = func_begin;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
+			functions[new StringAtom("delglobal")] = func_delglobal;
 			functions[new StringAtom("display")] = func_display;
 			functions[new StringAtom("eval")] = func_eval;
 			functions[new StringAtom("get")] = func_get;
+			functions[new StringAtom("getglobal")] = func_getglobal;
 			functions[new StringAtom("getlocal")] = func_get;
 			functions[new StringAtom("if")] = func_if;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
 			functions[new StringAtom("list")] = func_list;
-			functions[new StringAtom("or")] = func_or;
 			functions[new StringAtom("not")] = func_not;
+			functions[new StringAtom("or")] = func_or;
 			functions[new StringAtom("quot")] = func_quot;
+			functions[new StringAtom("setglobal")] = func_setglobal;
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
+			globals = new Dictionary<Atom, Atom>();
 		}
 
 		public Interpreter (Dictionary<Atom, LispFunction> functions)
 		{
 			this.functions = functions;
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
+			globals = new Dictionary<Atom, Atom>();
 		}
 
 		public delegate Atom LispFunction(Atom args, Locals locals, object user_data);
@@ -41,6 +46,8 @@ namespace Linkout.Lisp
 
 		protected Dictionary<Atom, CustomLispFunction> custom_functions;
 
+		protected Dictionary<Atom, Atom> globals;
+		
 		private static readonly bool trace_call = System.Environment.GetEnvironmentVariable("LINKOUT_TRACE") != null;
 		
 		public Atom[] get_n_args(Atom args, uint n, string function_name)
@@ -168,6 +175,18 @@ namespace Linkout.Lisp
 			return NilAtom.nil;
 		}
 		
+		public Atom func_delglobal(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 1, "delglobal");
+			
+			if (arglist != null)
+				set_global(arglist[0], NilAtom.nil);
+			
+			return NilAtom.nil;
+		}
+		
 		public virtual void write_line(string line, bool error)
 		{
 			if (error)
@@ -215,6 +234,28 @@ namespace Linkout.Lisp
 				result = locals.get_value(arglist[0]);
 			
 			return result;
+		}
+		
+		public virtual Atom get_global(Atom name)
+		{
+			Atom result;
+			
+			if (!globals.TryGetValue(name, out result))
+				result = NilAtom.nil;
+			
+			return result;
+		}
+		
+		public Atom func_getglobal(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 1, "getglobal");
+			
+			if (arglist == null)
+				return NilAtom.nil;
+			else
+				return get_global(arglist[0]);
 		}
 		
 		public Atom func_if(Atom args, Locals locals, object user_data)
@@ -361,6 +402,28 @@ namespace Linkout.Lisp
 		public Atom func_quot(Atom args, Locals locals, object user_data)
 		{
 			return args;
+		}
+		
+		public virtual void set_global(Atom name, Atom val)
+		{
+			if (val == NilAtom.nil)
+				globals.Remove(name);
+			else
+				globals[name] = val;
+		}
+		
+		public Atom func_setglobal(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 2, "setglobal");
+			
+			if (arglist != null)
+			{
+				set_global(arglist[0], arglist[1]);
+			}
+			
+			return NilAtom.nil;
 		}
 
 		public Atom eval_custom(CustomLispFunction f, Atom args, Locals locals, object user_data)

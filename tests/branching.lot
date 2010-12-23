@@ -62,9 +62,16 @@
 (expect () (not))
 
 (expect 2 (begin
-  ;FIXME: Use a global to verify execution of this line, when globals are implemented.
-  2
+  (setglobal 2 4)
   (+ 1 1)))
+
+(expect (getglobal 2) 4)
+
+(expect (getglobal x) ())
+
+(delglobal 2)
+
+(expect (getglobal 2) ())
 
 (expect 3 (begin (+ 1 2)))
 
