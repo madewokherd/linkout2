@@ -125,7 +125,7 @@ The lot base language supports the following functions:
  * (bitwise-and . args) Start with (bitwise-not 0). Take the bitwise and of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last and.
  * (bitwise-or . args) Start with 0. Take the bitwise or of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last or.
  * (bitwise-xor . args) Start with 0. Take the bitwise exclusive or of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last exclusive or.
- * (trunc x) - Equivalent to (bitwise-and x 0xffffffff)
+ * (trunc x) - Equivalent to (bitwise-and x -1)
  * (- a b) - Return the result of subtracting b from a, or nil if either b or a is not a number.
  * (/ a b) - Return the result of dividing a by b, or nil if either b or a is not a number. Round down if the result cannot be expressed exactly (rather than towards 0 as many programming languages do with integer arithmetic).
  * (% a b) - Equivalent to (- a (* (trunc (/ a b)) b)), or the (possibly fractional) modulo of a and b, which is between b and 0 (unlike in many programming languages).

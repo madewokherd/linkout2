@@ -135,3 +135,9 @@
 
 (expect 6.5 (bitwise-xor 5.25 3.75))
 
+(expect 1 (trunc 1))
+
+(expect 1 (trunc 1.5))
+
+(expect -2 (trunc -1.5))
+

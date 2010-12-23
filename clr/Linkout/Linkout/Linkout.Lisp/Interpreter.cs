@@ -33,6 +33,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("or")] = func_or;
 			functions[new StringAtom("quot")] = func_quot;
 			functions[new StringAtom("setglobal")] = func_setglobal;
+			functions[new StringAtom("trunc")] = func_trunc;
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
 			globals = new Dictionary<Atom, Atom>();
@@ -513,6 +514,18 @@ namespace Linkout.Lisp
 			}
 			
 			return NilAtom.nil;
+		}
+		
+		public Atom func_trunc(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 1, "trunc");
+			
+			if (arglist == null || arglist[0].atomtype != AtomType.FixedPoint)
+				return NilAtom.nil;
+			else
+				return new FixedPointAtom(arglist[0].get_fixedpoint() & -0x10000);
 		}
 
 		public Atom eval_custom(CustomLispFunction f, Atom args, Locals locals, object user_data)
