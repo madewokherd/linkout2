@@ -149,7 +149,7 @@ namespace Linkout.Lisp
 			return result;
 		}
 		
-		public virtual void add_custom_function(Atom args, bool eval_args_first)
+		public virtual void add_custom_function(Atom args, bool eval_args_first, object user_data)
 		{
 			CustomLispFunction f;
 			
@@ -163,14 +163,14 @@ namespace Linkout.Lisp
 		
 		public Atom func_define(Atom args, Locals locals, object user_data)
 		{
-			add_custom_function(args, true);
+			add_custom_function(args, true, user_data);
 			
 			return NilAtom.nil;
 		}
 		
 		public Atom func_defineex(Atom args, Locals locals, object user_data)
 		{
-			add_custom_function(args, false);
+			add_custom_function(args, false, user_data);
 			
 			return NilAtom.nil;
 		}
@@ -182,12 +182,12 @@ namespace Linkout.Lisp
 			Atom[] arglist = get_n_args(args, 1, "delglobal");
 			
 			if (arglist != null)
-				set_global(arglist[0], NilAtom.nil);
+				set_global(arglist[0], NilAtom.nil, user_data);
 			
 			return NilAtom.nil;
 		}
 		
-		public virtual void write_line(string line, bool error)
+		public virtual void write_line(string line, bool error, object user_data)
 		{
 			if (error)
 				Console.Error.WriteLine(line);
@@ -202,7 +202,7 @@ namespace Linkout.Lisp
 			Atom[] arglist = get_n_args(args, 1, "display");
 			
 			if (arglist != null)
-				write_line(arglist[0].ToString(), false);
+				write_line(arglist[0].ToString(), false, user_data);
 			
 			return NilAtom.nil;
 		}
@@ -236,7 +236,7 @@ namespace Linkout.Lisp
 			return result;
 		}
 		
-		public virtual Atom get_global(Atom name)
+		public virtual Atom get_global(Atom name, object user_data)
 		{
 			Atom result;
 			
@@ -255,7 +255,7 @@ namespace Linkout.Lisp
 			if (arglist == null)
 				return NilAtom.nil;
 			else
-				return get_global(arglist[0]);
+				return get_global(arglist[0], user_data);
 		}
 		
 		public Atom func_if(Atom args, Locals locals, object user_data)
@@ -404,7 +404,7 @@ namespace Linkout.Lisp
 			return args;
 		}
 		
-		public virtual void set_global(Atom name, Atom val)
+		public virtual void set_global(Atom name, Atom val, object user_data)
 		{
 			if (val == NilAtom.nil)
 				globals.Remove(name);
@@ -420,7 +420,7 @@ namespace Linkout.Lisp
 			
 			if (arglist != null)
 			{
-				set_global(arglist[0], arglist[1]);
+				set_global(arglist[0], arglist[1], user_data);
 			}
 			
 			return NilAtom.nil;

@@ -322,21 +322,39 @@ namespace Linkout
 			return result;
 		}
 		
-		public override void add_custom_function (Atom args, bool eval_args_first)
+		public override void add_custom_function (Atom args, bool eval_args_first, object user_data)
 		{
-			if (priv_frame_number != 0)
+			Frame self = (Frame)user_data;
+			
+			if (self.priv_frame_number != 0 || self.priv_committed)
 				/* Functions may only be defined on the first frame. */
 				return;
 			
-			base.add_custom_function (args, eval_args_first);
+			base.add_custom_function (args, eval_args_first, user_data);
 		}
 		
-		public override void set_global (Atom name, Atom val)
+		public override Atom get_global(Atom name, object user_data)
 		{
-			if (priv_committed)
+			Frame self = (Frame)user_data;
+			Atom result;
+			
+			if (!self.globals.TryGetValue(name, out result))
+				result = NilAtom.nil;
+			
+			return result;
+		}
+		
+		public override void set_global (Atom name, Atom val, object user_data)
+		{
+			Frame self = (Frame)user_data;
+
+			if (self.priv_committed)
 				return;
 			
-			base.set_global (name, val);
+			if (val == NilAtom.nil)
+				self.globals.Remove(name);
+			else
+				self.globals[name] = val;
 		}
 	}
 }
