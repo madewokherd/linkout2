@@ -14,6 +14,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("begin")] = func_begin;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
+			functions[new StringAtom("display")] = func_display;
 			functions[new StringAtom("eval")] = func_eval;
 			functions[new StringAtom("get")] = func_get;
 			functions[new StringAtom("getlocal")] = func_get;
@@ -163,6 +164,26 @@ namespace Linkout.Lisp
 		public Atom func_defineex(Atom args, Locals locals, object user_data)
 		{
 			add_custom_function(args, false);
+			
+			return NilAtom.nil;
+		}
+		
+		public virtual void write_line(string line, bool error)
+		{
+			if (error)
+				Console.Error.WriteLine(line);
+			else
+				Console.WriteLine(line);
+		}
+		
+		public Atom func_display(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 1, "display");
+			
+			if (arglist != null)
+				write_line(arglist[0].ToString(), false);
 			
 			return NilAtom.nil;
 		}

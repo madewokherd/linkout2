@@ -80,3 +80,5 @@
 
 (expect 3 (apply and (quot (+ 1) (+ 1 1) (+ 1 1 1))))
 
+(display "display test" "this part should not be printed")
+
