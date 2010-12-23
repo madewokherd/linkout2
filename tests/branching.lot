@@ -129,3 +129,9 @@
 
 (expect 7.75 (bitwise-or 5.25 3.75))
 
+(expect 0 (bitwise-xor))
+
+(expect 5.5 (bitwise-xor 5.5))
+
+(expect 6.5 (bitwise-xor 5.25 3.75))
+

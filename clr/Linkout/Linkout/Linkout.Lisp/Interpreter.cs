@@ -16,6 +16,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("bitwise-and")] = func_bitwise_and;
 			functions[new StringAtom("bitwise-not")] = func_bitwise_not;
 			functions[new StringAtom("bitwise-or")] = func_bitwise_or;
+			functions[new StringAtom("bitwise-xor")] = func_bitwise_xor;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("delglobal")] = func_delglobal;
@@ -210,6 +211,24 @@ namespace Linkout.Lisp
 				while (true)
 				{
 					result = (result | args.get_car().get_fixedpoint());
+					args = args.get_cdr();
+				}
+			}
+			catch (NotSupportedException)
+			{
+			}
+			return new FixedPointAtom(result);
+		}
+		
+		public Atom func_bitwise_xor(Atom args, Locals locals, object user_data)
+		{
+			long result = 0;
+			args = eval_args(args, locals, user_data);
+			try
+			{
+				while (true)
+				{
+					result = (result ^ args.get_car().get_fixedpoint());
 					args = args.get_cdr();
 				}
 			}
