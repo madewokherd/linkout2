@@ -54,9 +54,20 @@ namespace Linkout.Lisp
 			int precision=16;
 			bool printed_wholepart = false;
 			
+			if (int_value < 0)
+			{
+				output.WriteByte(45); /* - */
+				FixedPointAtom inverse = new FixedPointAtom(-int_value);
+				if (inverse.int_value >= 0)
+				{
+					inverse.to_stream(output);
+					return;
+				}
+			}
+			
 			/* find the least significant non-zero fractional digit */
 			for (shift=0; shift < 16; shift += 4)
-			{		
+			{
 				if (((int_value >> shift) & 0xf) != 0)
 				{
 					precision = shift;
@@ -66,10 +77,10 @@ namespace Linkout.Lisp
 			
 			output.WriteByte(48); /* 0 */
 			output.WriteByte(120); /* x */
-			for (shift=60; shift >= precision; shift -= 4)
+			for (shift=48; shift >= precision; shift -= 4)
 			{
 				long digit = (int_value >> shift) & 0xf;
-				if (precision == 12)
+				if (shift == 12)
 					output.WriteByte(46); /* . */
 				if (digit != 0 || printed_wholepart || shift <= 16)
 				{

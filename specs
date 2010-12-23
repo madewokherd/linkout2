@@ -59,8 +59,8 @@ Lot, the language in which games and frames will be authored, is similar to sche
 Objects in this language are called "atoms".
 An atom may be any of the following types:
  * Nil. The nil type has only one possible value, called nil, represented in the language as ().
- * String. Strings are 8-bit. The string encoding utf8 by convention, but the language does not guarantee this. If a string starts with an alphanumeric character, or one of the ascii characters +-*/%<>=, and it does not contain whitespace, or a close parenthesis, it may be represented as its contents in lot. Otherwise, it should be represented as a double-quoted string with backslash acting as an escape character.
- * Number. These are 48-bit values, where the least significant 16 bits are the fractional part. They may be represented as decimal numbers, or hex if prefixed with 0x. In both cases, the . character separates the whole part from the fractional part.
+ * String. Strings are 8-bit. The string encoding utf8 by convention, but the language does not guarantee this. If a string starts with an alphanumeric character, or one of the ascii characters +-*/%<>=, and it does not contain whitespace, or a close parenthesis, or a digit immediately following the first character when the first character is -, it may be represented as its contents in lot. Otherwise, it should be represented as a double-quoted string with backslash acting as an escape character.
+ * Number. These are 48-bit values, where the least significant 16 bits are the fractional part. They may be represented as decimal numbers, or hex if prefixed with 0x. In both cases, the . character separates the whole part from the fractional part. If the fraction cannot be represented exactly, round down.
  * Cons. A cons is a reference to two other atoms of any type. The first atom referenced is called the "car" and the second is called the "cdr". A cons may be represented as (car . cdr). Like in scheme, a cons may be used to create a linked list something like (a . (b . (c . ()))). Also, like scheme, the previous expression can be written as (a b c).
 
 Atoms are immutable, and a cons can never be recursive.

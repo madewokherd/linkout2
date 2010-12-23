@@ -97,5 +97,21 @@
 
 (expect 3 (* 3))
 
-(display (bitwise-not 0))
+(expect -0x0.0001 (bitwise-not 0))
+
+(expect 0x0.1999 0.1)
+
+(expect 0x0.e666 0.9)
+
+(expect 0x0.8 0.5)
+
+(expect -0x0.199a -0.1)
+
+(expect -0x0.e667 -0.9)
+
+(expect -0x0.8 -0.5)
+
+(display "-0this-should-be-displayed-in-quotes")
+
+(display "-this-shouldn't")
 

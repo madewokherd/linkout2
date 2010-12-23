@@ -72,6 +72,114 @@ namespace Linkout.Lisp
 			}
 		}
 		
+		private static Atom parse_number(System.IO.Stream input, int first_byte, bool negate, out bool close_paren)
+		{
+			long whole_part=first_byte - 48 /* '0' */;
+			int number_base = 10;
+			int current_byte;
+			long num_result;
+			long numerator, denominator, fractional_part=0;
+
+			close_paren = false;
+			
+			current_byte = input.ReadByte();
+			if (current_byte == -1)
+				throw new System.IO.EndOfStreamException();
+			
+			if (current_byte == ')')
+			{
+				close_paren = true;
+				return new FixedPointAtom(whole_part << 16);
+			}
+			
+			if (whole_part == 0 && current_byte == 'x')
+			{
+				number_base = 16;
+				current_byte = input.ReadByte();
+				if (current_byte == -1)
+					throw new System.IO.EndOfStreamException();
+			}
+
+			while ((current_byte >= '0' && current_byte <= '9') ||
+			       (current_byte >= 'a' && current_byte <= 'z') ||
+			       (current_byte >= 'A' && current_byte <= 'Z'))
+			{
+				int digit;
+				if (current_byte >= '0' && current_byte <= '9')
+					digit = current_byte - 48 /* '0' */;
+				else if (current_byte >= 'a' && current_byte <= 'z')
+					digit = current_byte - 97 /* a */ + 10;
+				else /* (current_byte >= 'A' && current_byte <= 'Z') */
+					digit = current_byte - 65 /* a */ + 10;
+				
+				if (digit >= number_base)
+					throw new ArgumentException("invalid syntax");
+				
+				whole_part = whole_part * number_base + digit;
+
+				if (whole_part > 0x80000000)
+					throw new OverflowException();
+				
+				current_byte = input.ReadByte();
+			}
+			
+			if (current_byte == '.')
+			{
+				numerator = 0;
+				denominator = 1;
+				current_byte = input.ReadByte();
+				while ((current_byte >= '0' && current_byte <= '9') ||
+				       (current_byte >= 'a' && current_byte <= 'z') ||
+				       (current_byte >= 'A' && current_byte <= 'Z'))
+				{
+					long new_denominator = denominator * number_base;
+					
+					if (new_denominator > 0x1000000000000)
+						throw new OverflowException();
+					
+					denominator = new_denominator;
+					
+					int digit;
+					if (current_byte >= '0' && current_byte <= '9')
+						digit = current_byte - 48 /* '0' */;
+					else if (current_byte >= 'a' && current_byte <= 'z')
+						digit = current_byte - 97 /* a */ + 10;
+					else /* (current_byte >= 'A' && current_byte <= 'Z') */
+						digit = current_byte - 65 /* a */ + 10;
+					
+					if (digit >= number_base)
+						throw new ArgumentException("invalid syntax");
+					
+					numerator = numerator * number_base + digit;
+	
+					current_byte = input.ReadByte();
+				}
+				
+				fractional_part = (numerator << 16) / denominator;
+				
+				if (negate && ((numerator << 16) % denominator) > 0)
+				{
+					fractional_part += 1;
+				}
+			}
+			
+			num_result = (whole_part << 16) + fractional_part;
+			
+			if (negate)
+				num_result = -num_result;
+			
+			if (current_byte == ')')
+			{
+				close_paren = true;
+				return new FixedPointAtom(num_result);
+			}
+			
+			if (current_byte == 32 || current_byte == 9 || current_byte == 10 || current_byte == 13 || current_byte == -1)
+				return new FixedPointAtom(num_result);
+			
+			throw new ArgumentException("invalid syntax");
+		}
+		
 		private static Atom from_stream(System.IO.Stream input, out bool close_paren)
 		{
 			int current_byte;
@@ -129,11 +237,20 @@ namespace Linkout.Lisp
 				
 				result.Add((byte)current_byte);
 				
+				bool maybe_number = (current_byte == '-');
+				
 				while (true)
 				{
 					current_byte = input.ReadByte();
 					if (current_byte == -1)
 						throw new System.IO.EndOfStreamException();
+					
+					if (maybe_number && current_byte >= '0' && current_byte <= '9')
+					{
+						return parse_number(input, current_byte, true, out close_paren);
+					}
+					
+					maybe_number = false;
 					
 					if (current_byte == 32 || current_byte == 9 || current_byte == 10 || current_byte == 13)
 						break;
@@ -151,62 +268,7 @@ namespace Linkout.Lisp
 			}
 			else if (current_byte >= '0' && current_byte <= '9')
 			{
-				int whole_part=current_byte - 48 /* '0' */;
-				int number_base = 10;
-
-				current_byte = input.ReadByte();
-				if (current_byte == -1)
-					throw new System.IO.EndOfStreamException();
-		
-				if (current_byte == ')')
-				{
-					close_paren = true;
-					return new FixedPointAtom(whole_part << 16);
-				}
-				
-				if (whole_part == 0 && current_byte == 'x')
-				{
-					number_base = 16;
-					current_byte = input.ReadByte();
-					if (current_byte == -1)
-						throw new System.IO.EndOfStreamException();
-				}
-
-				while ((current_byte >= '0' && current_byte <= '9') ||
-				       (current_byte >= 'a' && current_byte <= 'z') ||
-				       (current_byte >= 'A' && current_byte <= 'Z'))
-				{
-					int digit;
-					if (current_byte >= '0' && current_byte <= '9')
-						digit = current_byte - 48 /* '0' */;
-					else if (current_byte >= 'a' && current_byte <= 'z')
-						digit = current_byte - 97 /* a */ + 10;
-					else /* (current_byte >= 'A' && current_byte <= 'Z') */
-						digit = current_byte - 65 /* a */ + 10;
-					
-					if (digit >= number_base)
-						throw new ArgumentException("invalid syntax");
-					
-					whole_part = whole_part * number_base + digit;
-
-					current_byte = input.ReadByte();
-					if (current_byte == -1)
-						throw new System.IO.EndOfStreamException();
-				}
-				
-				if (current_byte == ')')
-				{
-					close_paren = true;
-					return new FixedPointAtom(whole_part << 16);
-				}
-				
-				if (current_byte == 32 || current_byte == 9 || current_byte == 10 || current_byte == 13)
-					return new FixedPointAtom(whole_part << 16);
-			
-				if (current_byte == 46 /* . */)
-					throw new NotImplementedException ();
-				
-				throw new ArgumentException("invalid syntax");
+				return parse_number(input, current_byte, false, out close_paren);
 			}
 			else if (current_byte == 40 /* ( */)
 			{

@@ -66,11 +66,16 @@ namespace Linkout.Lisp
 		private bool is_simple_literal()
 		{
 			int i;
+			if (this.string_value.Length == 0)
+				return false;
 			if ((this.string_value[0] < 'a' || this.string_value[0] > 'z') &&
 			    (this.string_value[0] < 'A' || this.string_value[0] > 'Z') &&
 			    this.string_value[0] != '+' && this.string_value[0] != '-' &&
 			    this.string_value[0] != '*' && this.string_value[0] != '/' && this.string_value[0] != '%' &&
 			    this.string_value[0] != '<' && this.string_value[0] != '>' && this.string_value[0] != '=')
+				return false;
+			if (this.string_value[0] == '-' && this.string_value.Length != 1 &&
+			    this.string_value[1] >= '0' && this.string_value[1] <= '9')
 				return false;
 			for (i=0; i<this.string_value.Length; i++)
 			{
