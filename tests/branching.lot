@@ -89,3 +89,11 @@
 
 (display "display test" "this part should not be printed")
 
+(expect 18 (* 3 3 2))
+
+(expect 1 (*))
+
+(expect 1 (* x))
+
+(expect 3 (* 3))
+

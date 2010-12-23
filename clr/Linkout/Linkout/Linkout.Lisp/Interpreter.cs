@@ -7,6 +7,7 @@ namespace Linkout.Lisp
 		public Interpreter ()
 		{
 			functions = new Dictionary<Atom, LispFunction>();
+			functions[new StringAtom("*")] = func_mult;
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("=")] = func_eq;
 			functions[new StringAtom("and")] = func_and;
@@ -74,6 +75,24 @@ namespace Linkout.Lisp
 				Console.WriteLine("Expected {0} arguments to {1}, got extra arguments: {2}", n, function_name, args);
 			
 			return result;
+		}
+
+		public Atom func_mult(Atom args, Locals locals, object user_data)
+		{
+			long result = 0x10000;
+			args = eval_args(args, locals, user_data);
+			try
+			{
+				while (true)
+				{
+					result = (result * args.get_car().get_fixedpoint()) >> 16;
+					args = args.get_cdr();
+				}
+			}
+			catch (NotSupportedException)
+			{
+			}
+			return new FixedPointAtom(result);
 		}
 		
 		public Atom func_plus(Atom args, Locals locals, object user_data)
