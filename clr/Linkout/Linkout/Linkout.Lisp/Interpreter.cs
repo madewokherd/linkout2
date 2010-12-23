@@ -16,6 +16,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("eval")] = func_eval;
 			functions[new StringAtom("get")] = func_get;
+			functions[new StringAtom("getlocal")] = func_get;
 			functions[new StringAtom("if")] = func_if;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
