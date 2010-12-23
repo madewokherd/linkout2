@@ -97,3 +97,5 @@
 
 (expect 3 (* 3))
 
+(display (bitwise-not 0))
+

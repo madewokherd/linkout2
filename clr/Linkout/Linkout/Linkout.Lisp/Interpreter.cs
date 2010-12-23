@@ -13,6 +13,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("and")] = func_and;
 			functions[new StringAtom("apply")] = func_apply;
 			functions[new StringAtom("begin")] = func_begin;
+			functions[new StringAtom("bitwise-not")] = func_bitwise_not;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("delglobal")] = func_delglobal;
@@ -166,6 +167,18 @@ namespace Linkout.Lisp
 			}
 			
 			return result;
+		}
+		
+		public Atom func_bitwise_not(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			Atom[] arglist = get_n_args(args, 1, "bitwise-not");
+			
+			if (arglist != null && arglist[0].atomtype == AtomType.FixedPoint)
+				return new FixedPointAtom(~(arglist[0].get_fixedpoint()));
+			else
+				return NilAtom.nil;
 		}
 		
 		public virtual void add_custom_function(Atom args, bool eval_args_first, object user_data)
