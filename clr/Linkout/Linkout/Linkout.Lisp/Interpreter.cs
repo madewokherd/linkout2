@@ -10,6 +10,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("+")] = func_plus;
 			functions[new StringAtom("=")] = func_eq;
 			functions[new StringAtom("and")] = func_and;
+			functions[new StringAtom("begin")] = func_begin;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("get")] = func_get;
@@ -103,6 +104,20 @@ namespace Linkout.Lisp
 				
 				if (!result.is_true())
 					break;
+				
+				args = args.get_cdr();
+			}
+			
+			return result;
+		}
+		
+		public Atom func_begin(Atom args, Locals locals, object user_data)
+		{
+			Atom result = NilAtom.nil;
+			
+			while (args.atomtype == AtomType.Cons)
+			{
+				result = eval(args.get_car(), locals, user_data);
 				
 				args = args.get_cdr();
 			}

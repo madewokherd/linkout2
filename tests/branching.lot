@@ -61,3 +61,14 @@
 
 (expect () (not))
 
+(expect 2 (begin
+  ;FIXME: Use a global to verify execution of this line, when globals are implemented.
+  2
+  (+ 1 1)))
+
+(expect 3 (begin (+ 1 2)))
+
+(expect () (begin))
+
+(expect () (begin . x))
+
