@@ -117,3 +117,9 @@
 
 (display -0x80000000) ;should display as negative
 
+(expect -0x0.0001 (bitwise-and))
+
+(expect 5.5 (bitwise-and 5.5))
+
+(expect 1.25 (bitwise-and 5.25 3.75))
+
