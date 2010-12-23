@@ -76,3 +76,5 @@
 
 (expect (quot quot x) (eval (quot quot quot x)))
 
+(expect (quot 1 2 3) (list (+ 1) (+ 1 1) (+ 1 1 1)))
+

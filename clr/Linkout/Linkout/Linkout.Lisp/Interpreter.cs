@@ -18,6 +18,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("if")] = func_if;
 			functions[new StringAtom("let")] = func_let;
 			functions[new StringAtom("let*")] = func_let_splat;
+			functions[new StringAtom("list")] = func_list;
 			functions[new StringAtom("or")] = func_or;
 			functions[new StringAtom("not")] = func_not;
 			functions[new StringAtom("quot")] = func_quot;
@@ -277,6 +278,13 @@ namespace Linkout.Lisp
 			}
 			
 			return eval(inner_block, new_locals, user_data);
+		}
+		
+		public Atom func_list(Atom args, Locals locals, object user_data)
+		{
+			args = eval_args(args, locals, user_data);
+			
+			return args;
 		}
 		
 		public Atom func_or(Atom args, Locals locals, object user_data)
