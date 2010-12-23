@@ -238,6 +238,10 @@ namespace Linkout.Lisp
 				close_paren = true;
 				return null;
 			}
+			else if (current_byte == '.')
+			{
+				throw new FoundDotException();
+			}
 			
 			throw new System.ArgumentException("invalid syntax");
 		}
