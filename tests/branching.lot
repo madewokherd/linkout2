@@ -123,3 +123,9 @@
 
 (expect 1.25 (bitwise-and 5.25 3.75))
 
+(expect 0 (bitwise-or))
+
+(expect 5.5 (bitwise-or 5.5))
+
+(expect 7.75 (bitwise-or 5.25 3.75))
+

@@ -15,6 +15,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("begin")] = func_begin;
 			functions[new StringAtom("bitwise-and")] = func_bitwise_and;
 			functions[new StringAtom("bitwise-not")] = func_bitwise_not;
+			functions[new StringAtom("bitwise-or")] = func_bitwise_or;
 			functions[new StringAtom("define")] = func_define;
 			functions[new StringAtom("defineex")] = func_defineex;
 			functions[new StringAtom("delglobal")] = func_delglobal;
@@ -200,6 +201,24 @@ namespace Linkout.Lisp
 				return NilAtom.nil;
 		}
 		
+		public Atom func_bitwise_or(Atom args, Locals locals, object user_data)
+		{
+			long result = 0;
+			args = eval_args(args, locals, user_data);
+			try
+			{
+				while (true)
+				{
+					result = (result | args.get_car().get_fixedpoint());
+					args = args.get_cdr();
+				}
+			}
+			catch (NotSupportedException)
+			{
+			}
+			return new FixedPointAtom(result);
+		}
+
 		public virtual void add_custom_function(Atom args, bool eval_args_first, object user_data)
 		{
 			CustomLispFunction f;
