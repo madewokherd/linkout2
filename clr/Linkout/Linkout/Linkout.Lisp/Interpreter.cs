@@ -9,6 +9,7 @@ namespace Linkout.Lisp
 			functions = new Dictionary<Atom, LispFunction>();
 			functions[new StringAtom("*")] = func_mult;
 			functions[new StringAtom("+")] = func_plus;
+			functions[new StringAtom("-")] = func_sub;
 			functions[new StringAtom("=")] = func_eq;
 			functions[new StringAtom("and")] = func_and;
 			functions[new StringAtom("apply")] = func_apply;
@@ -118,11 +119,45 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 		
+		public Atom func_sub(Atom args, Locals locals, object user_data)
+		{
+			long result=0;
+			int len=0;
+			
+			args = eval_args(args, locals, user_data);
+			
+			while (args.atomtype == AtomType.Cons)
+			{
+				Atom car = args.get_car();
+				
+				if (car.atomtype != AtomType.FixedPoint)
+					break;
+				
+				if (len == 0)
+					result = car.get_fixedpoint();
+				else
+					result = result - car.get_fixedpoint();
+				
+				len++;
+				args = args.get_cdr();
+			}
+			
+			if (len == 0)
+				return NilAtom.nil;
+			else if (len == 1)
+				return new FixedPointAtom(-result);
+			else
+				return new FixedPointAtom(result);
+		}
+		
 		public Atom func_eq(Atom args, Locals locals, object user_data)
 		{
 			args = eval_args(args, locals, user_data);
 			
 			Atom[] arglist = get_n_args(args, 2, "=");
+			
+			if (arglist == null)
+				return NilAtom.nil;
 			
 			if (arglist[0].Equals(arglist[1]))
 				return FixedPointAtom.One;

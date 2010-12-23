@@ -141,3 +141,13 @@
 
 (expect -2 (trunc -1.5))
 
+(expect -1 (- 5 6))
+
+(expect 0.5 (- -2.5 -3))
+
+(expect -1 (- 1))
+
+(expect -6 (- 3 4 5))
+
+(expect () (-))
+
