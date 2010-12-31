@@ -42,6 +42,7 @@ Each frame contains the following information:
 
 In order to calculate the next frame based on an existing frame, the engine will do the following:
  * Create an internal copy of the frame.
+ * Delete all objects with an attribute "deleted" that is not equal to ().
  * Apply each external event. External events take the form of code that is evaluated in the frame.
  * Execute the code in the global "BeforeUpdate" attribute.
  * For each object, in the reverse of the order the objects were added, execute the code in the object's OnFrame attribute. (Rationale: Some update functions will result in the creation of new objects. These new objects should not be updated until the NEXT frame, and the easiest way to ensure this is to enforce a general rule that newer objects are updated first. If no specific order were specified, different implementations could update the same frame and get a different result.)
@@ -73,17 +74,17 @@ For serialization and deserialization, the engine uses a simplified version of s
 The engine understands the following types:
 
 "box" type:
- * An object of the "box" type occupies all pixels within the rectangular area determined by its "x", "y", "width", and "height" attributes. These pixels have a type of nil.
+ * An object of the "box" type occupies all pixels within the rectangular area determined by its "x", "y", "width", and "height" attributes. These pixels have a type of 1.
 
 "sprite" type:
  * An object of the "sprite" type occupies a fixed set of pixels, with an offset determined by its "x" and "y" attributes.
  * The "id" value is a string key into the frame's dictionary of masks, and it determines the current sprite's size and mask. If the key is not in the frame's mask dictionary, the sprite occupies no pixels.
- * For each pixel with a non-zero value stored in the mask, the sprite occupies a pixel with a type of (m), where m is the value stored in the mask.
+ * For each pixel with a non-zero value stored in the mask, the sprite occupies a pixel with a type of the value stored in the mask.
 
 "tilemap" type:
  * An object of the "tilemap" type is essentially a conglomerate of sprites. Its upper-left corner is defined by its "x" and "y" attributes. It has tilewidth and tileheight attributes that determine the size of a single tile (the fractional part of these values is IGNORED). Theoretically, the tilemap has enough storage for every pair of 32-bit x and y values, but in practice an engine may fail if abs(x*y) is too large.
  * For each pair of 32-bit values, the tilemap stores a 32-bit integer. (A tilemap containing only 0's should in reality not occupy any memory, and a tilemap where all x and y coordinates are between, say, 0 and 3 inclusive, should probably occupy no more than 16 "slots" of memory.)
- * For each pair of integers tx and ty, where the tilemap has stored a non-zero 32-bit integer, that integer determines the collision behavior of pixels where x is in the range [x + tx*tilewidth, x + (tx+1)*tilewidth) and y is in the range [y + ty*tileheight, y + (ty+1)*tileheight). (If tileheight or tilewidth is not positive, those ranges are empty.) The collision mask is determined by the ("mask" id) attribute of the tilemap, where id is the integral id stored for those pixels. The pixel type of pixels in the collision mask is determined by the ("treatas" id m) attribute of the tilemap, where id is the value stored in the tilemap, and m is the value of the pixel in the collision mask.
+ * For each pair of integers tx and ty, where the tilemap has stored a non-zero 32-bit integer, that integer determines the collision behavior of pixels where x is in the range [x + tx*tilewidth, x + (tx+1)*tilewidth) and y is in the range [y + ty*tileheight, y + (ty+1)*tileheight). (If tileheight or tilewidth is not positive, those ranges are empty.) The collision mask is determined by the ("mask" id) attribute of the tilemap, where id is the integral id stored for those pixels. If ("mask" id) is not specified then a default collision mask that contains a 1 at every pixel will be used. The pixel type of pixels in the collision mask is (tx ty m), where m is the value from the collision mask.
 
 In order to evaluate an atom, the Lot interpreter does the following:
  * If the atom is not a cons, return that atom as is.
@@ -141,26 +142,57 @@ The lot base language supports the following functions:
  * sin, cos, tan, asin, acos, tan - TBD trig functions. (The results will have to be specified exactly.)
 
 Game scripts support the following functions:
+ * *(frame . expressions) - Create an empty frame, then evaluate (begin . expressions) in that frame. If there is a current frame, do nothing (an implementaion may warn if the frame states do not match).
+ * (advance) - Calculate the next frame (including any external events, from the script or the implementation), then set it as the current frame. This locks both the old and new frame so that they cannot be modified.
+ * (seek-to n) - Find the nth frame and set it to the current frame. When seeking backwards, frames are not discarded until some other function sets the current frame. Thus it is possible to seek forwards.
+ * (getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc. If there is no curent frame, return nil.
+ * *(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can modify the state of the first frame if the first frame has not yet been locked.
+ * (extern . args) - Add each item in args to a list of external events to apply when (advance) is next called.
+ * (hint . args) - Do nothing. The implementation may do something with the value of args or not.
 
 Frames support the following functions:
- * getown - If the car of the arguments is a string, and it is a key in the current object's dictionary, return the corresponding value. Otherwise, return nil.
- * setown - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the current object's dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
- * delown - If the car of the arguments is a string, and it is a key in the current object's dictionary, remove it from the current object's dictionary. Always return nil.
- * getother - If the car of the arguments is a string, and it is a key in the other object's dictionary, return the corresponding value. Otherwise, return nil.
- * setother - If the car of the arguments is a string, and the cdr of the arguments is a cons, treat the car as a key into the current other's dictionary, and set the value to the result of evaluating the car of the cdr. If the cdr of the arguments is not a cons, do nothing. Always return nil.
- * delother - If the car of the arguments is a string, and it is a key in the other object's dictionary, remove it from the other object's dictionary. Always return nil.
- * (check x y width height ownfound otherfound) - Query the engine for a set of pixels in the given rectangle that are occupied by other objects. For each group of pixels, evaluate ownfound and (getother otherfound).
- * (checkself x y width height found) - Query the engine for a set of pixels in the given rectangle that are occupied by the current object. For each group found, evaluate found.
- * (checkother x y width height found) - Query the engine for a set of pixels in the given rectangle that are occupied by the other object. For each group found, evaluate found. (When found is evaluated, the definition of the current object and other object will not change.)
- * (updatepos ownbeforecollide ownaftercollide otherbeforeupdate otheraftercollide) - While the current object's mdx and mdy variables are not equal to 0, update the current object's position, in steps up to as large as one pixel, by repeating the following steps. If mdx is greater than 0, calculate the lesser of 1 or mdx to the object's x position, which will henceforth be referred to as the "step". Subtract the step from mdx. If adding the step to x would change the whole part of x, query the engine for a set of pixels that are occupied by other objects and are in the space that the object would newly occupy or would occupy with a different type of pixel. For each group of pixels, evaluate ownbeforecollide and (getother otherbeforecollide). If none of the evaluated code has called (stop) or marked the current object for destruction, update the x coordinate and call ownaftercollide and (getother otheraftercollide) for the same group of pixels (i.e. do NOT check for collisions again, meaning that the "after" functions are called if and only if the "before" function is called and the object moves). If mdx is negative, use a negative step instead. If mdx is 0 and mdy is non-zero, go through a similar procedure with y co-ordinates instead. Repeat until both mdx and mdy are 0.
- * getownpixeltype - When called from within a collision function, return the pixel type number of the group of pixels in the current object being checked. Return nil if this is nonsensical.
- * getotherpixeltype - When called from within a collision function, return the pixel type number of the group of pixels in the other object being checked. Return nil if this is nonsensical.
- * (getownpixel n string) - Return the value corresponding to the given key in the current object's nth pixel dictionary. Return nil.
- * (setownpixel n string value) - Set the value corresponding to the given key in the current object's nth pixel dictionary. Return nil.
- * (delownpixel n string) - Reset the value corresponding to the given key in the current object's nth pixel dictionary. Return nil.
- * getotherpixel, setotherpixel, delotherpixel - Same as *ownpixel, but use the other object instead.
- * iammoving - When called in the context of code evaluated by check, checkself, or updatepos, return 1 if the code being evaluated was passed to that command as "own" code (as opposed to "other" code). Otherwise, return 0.
+ * (setattr id name value) - Set the named attribute on the given object to the given value. If the object does not exist or the frame is currently immutable, do nothing.
+ * (getattr id name) - Return the value associated with the named attribute on the given object. If the given object does not exist or does not contain the named attriute, return nil.
+ * (delattr id name) - Equivalent to (setattr id name ())
+ * *(check-rectangle x y width height objectidname pixeltypename body) - Evalate x, y, width, height, objectidname, and pixeltypename. Query the engine for a set of pixels in the given rectangle that are occupied by any object. Build this list before calling body. For each group of pixels, sorted by objectidname then by pixeltypename, evaluate body with the following locals set:
+  * objectidname - The id of the found object.
+  * pixeltypename - The pixel type of the found pixels.
+  If body returns any value other than (), return it and do not call body again.
+ * *(foreach-object objectidname body) - Evaluate objectidname. For each object that exists at the time this function is called, sorted by id, evaluate body with local objectidname set to the id of that object. If body returns any value other than (), return it and do not call body again.
+ * *(check-object id x y objectidname pixeltypename body) - Same as check-rectangle, except that only the region that would be occupied by the given object, if it had the given x and y coordinates, is searched, and pixels occupied by the given object will not be returned.
+ * (getpixeltype id xofs yofs) - If the object occupies the pixel at the given x and y offsets (relative to its x and y attributes), return the pixel type at that offset. Otherwise, return nil.
+ * *(check-object-pixels id x y ownpixeltypename objectidname pixeltypename body) - Same as check-object, except that the pixel types in the given object are treated separately. ownpixeltypename will be set to the pixel type of the pixels that would be occupied by the current object if it had the given x and y value and are occupied by objectidname with pixeltypename. The results are returned in order by objectidname, pixeltypename, and ownpixeltypename.
+ * (getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc.
+ * *(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can be used to inspect (but not modify) the state of previous frames. It can, however, modify the state of the current frame.
+ * (hint . args) - Add args (not each argument, but the single value args) to a list of hints for the current frame. This list may be meaningful to the game script or the language implementation, or it may not.
+ * (get-hints) - Return the list of hints for the current frame, in the order in which they were added.
+
+The following are important for frames but should be library functions:
+ * (setown name value) - Equivalent to (setattr (getlocal self) name value)
+ * (getown name) - Equivalent to (getattr (getlocal self) name)
+ * (delown name) - Equivalent to (delattr (getlocal self) name)
+ * (setother name value) - Equivalent to (setattr (getlocal other) name value)
+ * (getother name) - Equivalent to (getattr (getlocal other) name)
+ * (delother name) - Equivalent to (delattr (getlocal other) name)
+ * (die) - Equivalent to (setown deleted 1)
+ * (kill) - Equivalent to (setother deleted 1)
+ * (getpixelattr id pixeltype name) - If the given object has an attribute named getpixel, evaluate the contents of that attribute with locals id set to id, pixeltype set to pixeltype, and name set to name. Otherwise, return (getattr id name).
+ * (setpixelattr id pixeltype name value) - If the given object has an attribute named setpixel, evaluate the contents of that attribute with locals id set to id, pixeltype set to pixeltype, name set to name, and value set to value. Otherwise, return (setattr id name value).
+ * (delpixelattr id pixeltype name) - Equivalent to (setpixelattr id pixeltype name ()).
+ * (getownpixel name) - Equivalent to (getpixelattr (getlocal self) (getlocal ownpixeltype) name)
+ * (setownpixel name value) - Equivalent to (setpixelattr (getlocal self) (getlocal ownpixeltype) name value)
+ * (delownpixel name) - Equivalent to (setpixelattr (getlocal self) (getlocal ownpixeltype) name ())
+ * (getotherpixel name) - Equivalent to (getpixelattr (getlocal other) (getlocal otherpixeltype) name)
+ * (setotherpixel name value) - Equivalent to (setpixelattr (getlocal other) (getlocal otherpixeltype) name value)
+ * (delotherpixel name) - Equivalent to (setpixelattr (getlocal other) (getlocal otherpixeltype) name ())
+ * (updatepos id ownbeforecollide ownaftercollide otherbeforeupdate otheraftercollide) - While the given object's mdx and mdy variables are not equal to 0 and the given object's deleted attribute is unset (equal to ()), update the current object's position, in steps up to as large as one pixel, by repeating the following steps. If mdx is greater than 0, calculate the lesser of 1 or mdx to the object's x position, which will henceforth be referred to as the "step". Subtract the step from mdx. If adding the step to x would change the whole part of x, query the engine for a set of pixels that are occupied by other objects and are in the space that the object would newly occupy or would occupy with a different type of pixel. For each group of pixels, evaluate ownbeforecollide and (getother otherbeforecollide). If none of the evaluated code has called (stop) or marked the current object for destruction, update the x coordinate and call ownaftercollide and (getother otheraftercollide) for the same group of pixels (i.e. do NOT check for collisions again, meaning that the "after" functions are called if and only if the "before" function is called and the object moves). If mdx is negative, use a negative step instead. If mdx is 0 and mdy is non-zero, go through a similar procedure with y co-ordinates instead. Repeat until both mdx and mdy are 0. The following locals will be set when calling collision functions:
+   * self - The object whose attribute is being evaluated.
+   * other - The object whose attribute is not being evaluated (either id or an object it will collide with).
+   * moving-object - The id passed to updatepos.
+   * xofs - The displacement applied to x this step.
+   * yofs - The displacement applied to y this step.
+   * ownpixel - The pixeltype of self involved in the collision.
+   * ownpixel - The pixeltype of other involved in the collision.
+ * (iammoving) - When called in the context of code evaluated by updatepos, return 1 if the code being evaluated was passed to that command as "own" code (as opposed to "other" code). Otherwise, return 0.
  * (stop) - When evaluated before a collision, prevent the object that would move from moving. Return nil.
- * die - Mark the current object for destruction. Objects that are marked for destruction return no pixels for collision detection purposes, and move commands behave as if their dx and dy attributes are 0. The object will be destroyed when the engine is no longer evaluating code.
- * kill - Mark the other object for destruction. Objects that are marked for destruction return no pixels for collision detection purposes, and move commands behave as if their dx and dy attributes are 0. The object will be destroyed when the engine is no longer evaluating code.
 
