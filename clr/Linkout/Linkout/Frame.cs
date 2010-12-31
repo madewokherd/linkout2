@@ -4,14 +4,8 @@ using System.Collections.Generic;
 using Linkout.Lisp;
 namespace Linkout
 {
-	public sealed class Frame : Interpreter, IEnumerable<GameObject>
+	public sealed class Frame : IEnumerable<GameObject>
 	{
-		private void set_functions()
-		{
-			functions[new StringAtom("getown")] = func_getown;
-			functions[new StringAtom("setown")] = func_setown;
-		}
-		
 		public Frame ()
 		{
 			priv_committed = false;
@@ -21,10 +15,12 @@ namespace Linkout
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 			
-			set_functions();
+			globals = new Dictionary<Atom, Atom>();
+			
+			interpreter = new FrameInterpreter();
 		}
 
-		private Frame (Frame original) : base(original.functions)
+		private Frame (Frame original)
 		{
 			LinkedListNode<GameObject> node;
 
@@ -32,6 +28,9 @@ namespace Linkout
 			priv_frame_number = original.priv_frame_number;
 			prev_frame_hash = original.GetHashCode();
 			prev_frames = original.prev_frames;
+			
+			globals = new Dictionary<Atom, Atom>(original.globals);
+			interpreter = original.interpreter;
 			
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
@@ -42,12 +41,22 @@ namespace Linkout
 			}
 		}
 		
+		private FrameInterpreter interpreter;
+		
 		private bool priv_committed;
 
 		private uint priv_frame_number;
 		
-		private LinkedList<GameObject> objectlist;
-		private Dictionary<long, LinkedListNode<GameObject>> objectdict;
+		internal LinkedList<GameObject> objectlist;
+		internal Dictionary<long, LinkedListNode<GameObject>> objectdict;
+		
+		public bool committed
+		{
+			get
+			{
+				return priv_committed;
+			}
+		}
 		
 		private Atom[] priv_external_events;
 		
@@ -58,6 +67,8 @@ namespace Linkout
 				return priv_external_events;
 			}
 		}
+		
+		internal Dictionary<Atom, Atom> globals;
 		
 		/* History */
 		private int prev_frame_hash;
@@ -141,6 +152,16 @@ namespace Linkout
 			return result;
 		}
 		
+		public void eval(Atom args, Context context)
+		{
+			FrameContext new_context = new FrameContext();
+			
+			context.CopyToContext(new_context);
+			new_context.frame = this;
+			
+			interpreter.eval(args, new_context);
+		}
+		
 		private void priv_advance(Frame prev_frame, Atom[] external_events)
 		{
 			LinkedListNode<GameObject> node;
@@ -151,24 +172,27 @@ namespace Linkout
 			
 			if (external_events != null)
 			{
-				Locals locals = new Locals();
+				FrameContext context = new FrameContext();
+				
+				context.frame = this;
 				
 				priv_external_events = external_events;
 				
 				foreach (Atom external_event in external_events)
 				{
-					eval(external_event, locals, this);
+					interpreter.eval(external_event, context);
 				}
 			}
 			
 			for (node = objectlist.Last; node != null; node = node.Previous)
 			{
 				Atom objectid = new FixedPointAtom(node.Value.id);
-				Locals locals = new Locals();
+				FrameContext context = new FrameContext();
 				
-				locals.dict[new StringAtom("self")] = objectid;
+				context.frame = this;
+				context.dict[new StringAtom("self")] = objectid;
 				
-				eval(node.Value.getattr(new StringAtom("OnFrame")), locals, this);
+				interpreter.eval(node.Value.getattr(new StringAtom("OnFrame")), context);
 			}
 			
 			commit();
@@ -207,60 +231,7 @@ namespace Linkout
 					i++;
 			}
 		}
-		
-		public static Atom func_getown(Atom args, Locals locals, object user_data)
-		{
-			Frame self = (Frame)user_data;
-			Atom objectidatom = locals.dict[new StringAtom("self")];
-			LinkedListNode<GameObject> obj_node;
-			
-			args = self.eval_args(args, locals, user_data);
-			
-			if (objectidatom.atomtype == AtomType.FixedPoint &&
-			    self.objectdict.TryGetValue(objectidatom.get_fixedpoint(), out obj_node))
-			{
-				GameObject obj = obj_node.Value;
-				if (args.atomtype == AtomType.Cons)
-				{
-					Atom key = args.get_car();
-					return obj.getattr(key);
-				}
-			}
-			
-			return NilAtom.nil;
-		}
-
-		public static Atom func_setown(Atom args, Locals locals, object user_data)
-		{
-			Frame self = (Frame)user_data;
-			Atom objectidatom;
-			LinkedListNode<GameObject> obj_node;
-			
-			args = self.eval_args(args, locals, user_data);
-			
-			if (!locals.dict.TryGetValue(new StringAtom("self"), out objectidatom))
-				return NilAtom.nil;
-			
-			if (objectidatom.atomtype == AtomType.FixedPoint &&
-			    self.objectdict.TryGetValue(objectidatom.get_fixedpoint(), out obj_node))
-			{
-				GameObject obj = obj_node.Value;
-				while (args.atomtype == AtomType.Cons)
-				{
-					Atom key = args.get_car();
-					args = args.get_cdr();
-					if (args.atomtype != AtomType.Cons)
-						break;
-					Atom val = args.get_car();
-					args = args.get_cdr();
-					
-					obj.setattr(key, val);
-				}
-			}
-			
-			return NilAtom.nil;
-		}
-		
+				
 		/* Frame hasing/comparison
 		 * 
 		 * We're not overriding the standard methods because these methods
@@ -320,41 +291,6 @@ namespace Linkout
 			LinkedListEnumerator<GameObject> result = new LinkedListEnumerator<GameObject>(objectlist.First);
 			
 			return result;
-		}
-		
-		public override void add_custom_function (Atom args, bool eval_args_first, object user_data)
-		{
-			Frame self = (Frame)user_data;
-			
-			if (self.priv_frame_number != 0 || self.priv_committed)
-				/* Functions may only be defined on the first frame. */
-				return;
-			
-			base.add_custom_function (args, eval_args_first, user_data);
-		}
-		
-		public override Atom get_global(Atom name, object user_data)
-		{
-			Frame self = (Frame)user_data;
-			Atom result;
-			
-			if (!self.globals.TryGetValue(name, out result))
-				result = NilAtom.nil;
-			
-			return result;
-		}
-		
-		public override void set_global (Atom name, Atom val, object user_data)
-		{
-			Frame self = (Frame)user_data;
-
-			if (self.priv_committed)
-				return;
-			
-			if (val == NilAtom.nil)
-				self.globals.Remove(name);
-			else
-				self.globals[name] = val;
 		}
 	}
 }

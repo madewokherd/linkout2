@@ -47,7 +47,7 @@ namespace Linkout.Lisp
 			globals = new Dictionary<Atom, Atom>();
 		}
 
-		public delegate Atom LispFunction(Atom args, Locals locals, object user_data);
+		public delegate Atom LispFunction(Atom args, Context context);
 		
 		protected Dictionary<Atom, LispFunction> functions;
 
@@ -83,10 +83,10 @@ namespace Linkout.Lisp
 			return result;
 		}
 
-		public Atom func_mult(Atom args, Locals locals, object user_data)
+		public Atom func_mult(Atom args, Context context)
 		{
 			long result = 0x10000;
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			try
 			{
 				while (true)
@@ -101,10 +101,10 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 		
-		public Atom func_plus(Atom args, Locals locals, object user_data)
+		public Atom func_plus(Atom args, Context context)
 		{
 			long result = 0;
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			try
 			{
 				while (true)
@@ -119,12 +119,12 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 		
-		public Atom func_sub(Atom args, Locals locals, object user_data)
+		public Atom func_sub(Atom args, Context context)
 		{
 			long result=0;
 			int len=0;
 			
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			while (args.atomtype == AtomType.Cons)
 			{
@@ -150,9 +150,9 @@ namespace Linkout.Lisp
 				return new FixedPointAtom(result);
 		}
 		
-		public Atom func_eq(Atom args, Locals locals, object user_data)
+		public Atom func_eq(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 2, "=");
 			
@@ -165,13 +165,13 @@ namespace Linkout.Lisp
 				return FixedPointAtom.Zero;
 		}
 		
-		public Atom func_and(Atom args, Locals locals, object user_data)
+		public Atom func_and(Atom args, Context context)
 		{
 			Atom result = NilAtom.nil;
 			
 			while (args.atomtype == AtomType.Cons)
 			{
-				result = eval(args.get_car(), locals, user_data);
+				result = eval(args.get_car(), context);
 				
 				if (!result.is_true())
 					break;
@@ -182,25 +182,25 @@ namespace Linkout.Lisp
 			return result;
 		}
 		
-		public Atom func_apply(Atom args, Locals locals, object user_data)
+		public Atom func_apply(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 2, "apply");
 			
 			if (arglist == null)
 				return NilAtom.nil;
 			else
-				return eval(new ConsAtom(arglist[0], arglist[1]), locals, user_data);
+				return eval(new ConsAtom(arglist[0], arglist[1]), context);
 		}
 		
-		public Atom func_begin(Atom args, Locals locals, object user_data)
+		public Atom func_begin(Atom args, Context context)
 		{
 			Atom result = NilAtom.nil;
 			
 			while (args.atomtype == AtomType.Cons)
 			{
-				result = eval(args.get_car(), locals, user_data);
+				result = eval(args.get_car(), context);
 				
 				args = args.get_cdr();
 			}
@@ -208,10 +208,10 @@ namespace Linkout.Lisp
 			return result;
 		}
 		
-		public Atom func_bitwise_and(Atom args, Locals locals, object user_data)
+		public Atom func_bitwise_and(Atom args, Context context)
 		{
 			long result = -1;
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			try
 			{
 				while (true)
@@ -226,9 +226,9 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 
-		public Atom func_bitwise_not(Atom args, Locals locals, object user_data)
+		public Atom func_bitwise_not(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "bitwise-not");
 			
@@ -238,10 +238,10 @@ namespace Linkout.Lisp
 				return NilAtom.nil;
 		}
 		
-		public Atom func_bitwise_or(Atom args, Locals locals, object user_data)
+		public Atom func_bitwise_or(Atom args, Context context)
 		{
 			long result = 0;
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			try
 			{
 				while (true)
@@ -256,10 +256,10 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 		
-		public Atom func_bitwise_xor(Atom args, Locals locals, object user_data)
+		public Atom func_bitwise_xor(Atom args, Context context)
 		{
 			long result = 0;
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			try
 			{
 				while (true)
@@ -274,7 +274,7 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 
-		public virtual void add_custom_function(Atom args, bool eval_args_first, object user_data)
+		public virtual void add_custom_function(Atom args, bool eval_args_first, Context context)
 		{
 			CustomLispFunction f;
 			
@@ -286,28 +286,28 @@ namespace Linkout.Lisp
 			}
 		}
 		
-		public Atom func_define(Atom args, Locals locals, object user_data)
+		public Atom func_define(Atom args, Context context)
 		{
-			add_custom_function(args, true, user_data);
+			add_custom_function(args, true, context);
 			
 			return NilAtom.nil;
 		}
 		
-		public Atom func_defineex(Atom args, Locals locals, object user_data)
+		public Atom func_defineex(Atom args, Context context)
 		{
-			add_custom_function(args, false, user_data);
+			add_custom_function(args, false, context);
 			
 			return NilAtom.nil;
 		}
 		
-		public Atom func_delglobal(Atom args, Locals locals, object user_data)
+		public Atom func_delglobal(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "delglobal");
 			
 			if (arglist != null)
-				set_global(arglist[0], NilAtom.nil, user_data);
+				set_global(arglist[0], NilAtom.nil, context);
 			
 			return NilAtom.nil;
 		}
@@ -320,48 +320,51 @@ namespace Linkout.Lisp
 				Console.WriteLine(line);
 		}
 		
-		public Atom func_display(Atom args, Locals locals, object user_data)
+		public Atom func_display(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "display");
 			
 			if (arglist != null)
-				write_line(arglist[0].ToString(), false, user_data);
+				write_line(arglist[0].ToString(), false, context);
 			
 			return NilAtom.nil;
 		}
 		
-		public Atom func_eval(Atom args, Locals locals, object user_data)
+		public Atom func_eval(Atom args, Context context)
 		{
 			Atom result;
 			
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "eval");
 			
 			if (arglist == null)
 				result = NilAtom.nil;
 			else
-				result = eval(arglist[0], locals, user_data);
+				result = eval(arglist[0], context);
 			
 			return result;
 		}
 		
-		public Atom func_get(Atom args, Locals locals, object user_data)
+		public Atom func_get(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "get");
 			Atom result = NilAtom.nil;
 			
 			if (arglist != null)
-				result = locals.get_value(arglist[0]);
+			{
+				if (!context.dict.TryGetValue(arglist[0], out result))
+					result = NilAtom.nil;
+			}
 			
 			return result;
 		}
 		
-		public virtual Atom get_global(Atom name, object user_data)
+		public virtual Atom get_global(Atom name, Context context)
 		{
 			Atom result;
 			
@@ -371,19 +374,19 @@ namespace Linkout.Lisp
 			return result;
 		}
 		
-		public Atom func_getglobal(Atom args, Locals locals, object user_data)
+		public Atom func_getglobal(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "getglobal");
 			
 			if (arglist == null)
 				return NilAtom.nil;
 			else
-				return get_global(arglist[0], user_data);
+				return get_global(arglist[0], context);
 		}
 		
-		public Atom func_if(Atom args, Locals locals, object user_data)
+		public Atom func_if(Atom args, Context context)
 		{
 			Atom[] arglist = get_n_args(args, 3, "if");
 			Atom condition_result;
@@ -391,19 +394,19 @@ namespace Linkout.Lisp
 			if (arglist == null)
 				return NilAtom.nil;
 			
-			condition_result = eval(arglist[0], locals, user_data);
+			condition_result = eval(arglist[0], context);
 			
 			if (condition_result.is_true())
-				return eval(arglist[1], locals, user_data);
+				return eval(arglist[1], context);
 			else
-				return eval(arglist[2], locals, user_data);
+				return eval(arglist[2], context);
 		}
 		
-		public Atom func_let(Atom args, Locals locals, object user_data)
+		public Atom func_let(Atom args, Context context)
 		{
 			Atom assignments;
 			Atom inner_block;
-			Locals new_locals = new Locals(locals);
+			Context new_context = context.Copy();
 			
 			try
 			{
@@ -431,20 +434,20 @@ namespace Linkout.Lisp
 					break;
 				}
 				
-				key = eval(key, locals, user_data);
-				new_locals.dict[key] = eval(expression, locals, user_data);
+				key = eval(key, context);
+				new_context.dict[key] = eval(expression, context);
 				
 				assignments = assignments.get_cdr();
 			}
 			
-			return eval(inner_block, new_locals, user_data);
+			return eval(inner_block, new_context);
 		}
 		
-		public Atom func_let_splat(Atom args, Locals locals, object user_data)
+		public Atom func_let_splat(Atom args, Context context)
 		{
 			Atom assignments;
 			Atom inner_block;
-			Locals new_locals = new Locals(locals);
+			Context new_context = context.Copy();
 			
 			try
 			{
@@ -472,29 +475,29 @@ namespace Linkout.Lisp
 					break;
 				}
 				
-				key = eval(key, new_locals, user_data);
-				new_locals.dict[key] = eval(expression, new_locals, user_data);
+				key = eval(key, context);
+				new_context.dict[key] = eval(expression, new_context);
 				
 				assignments = assignments.get_cdr();
 			}
 			
-			return eval(inner_block, new_locals, user_data);
+			return eval(inner_block, new_context);
 		}
 		
-		public Atom func_list(Atom args, Locals locals, object user_data)
+		public Atom func_list(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			return args;
 		}
 		
-		public Atom func_or(Atom args, Locals locals, object user_data)
+		public Atom func_or(Atom args, Context context)
 		{
 			Atom result = NilAtom.nil;
 			
 			while (args.atomtype == AtomType.Cons)
 			{
-				result = eval(args.get_car(), locals, user_data);
+				result = eval(args.get_car(), context);
 				
 				if (result.is_true())
 					break;
@@ -505,11 +508,11 @@ namespace Linkout.Lisp
 			return result;
 		}
 		
-		public Atom func_not(Atom args, Locals locals, object user_data)
+		public Atom func_not(Atom args, Context context)
 		{
 			Atom[] arglist;
 			
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			arglist = get_n_args(args, 1, "not");
 			
@@ -524,12 +527,12 @@ namespace Linkout.Lisp
 				return NilAtom.nil;
 		}
 		
-		public Atom func_quot(Atom args, Locals locals, object user_data)
+		public Atom func_quot(Atom args, Context context)
 		{
 			return args;
 		}
 		
-		public virtual void set_global(Atom name, Atom val, object user_data)
+		public virtual void set_global(Atom name, Atom val, Context context)
 		{
 			if (val == NilAtom.nil)
 				globals.Remove(name);
@@ -537,23 +540,23 @@ namespace Linkout.Lisp
 				globals[name] = val;
 		}
 		
-		public Atom func_setglobal(Atom args, Locals locals, object user_data)
+		public Atom func_setglobal(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 2, "setglobal");
 			
 			if (arglist != null)
 			{
-				set_global(arglist[0], arglist[1], user_data);
+				set_global(arglist[0], arglist[1], context);
 			}
 			
 			return NilAtom.nil;
 		}
 		
-		public Atom func_trunc(Atom args, Locals locals, object user_data)
+		public Atom func_trunc(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			Atom[] arglist = get_n_args(args, 1, "trunc");
 			
@@ -563,19 +566,21 @@ namespace Linkout.Lisp
 				return new FixedPointAtom(arglist[0].get_fixedpoint() & -0x10000);
 		}
 
-		public Atom eval_custom(CustomLispFunction f, Atom args, Locals locals, object user_data)
+		public Atom eval_custom(CustomLispFunction f, Atom args, Context context)
 		{
-			Locals new_locals;
+			Context new_context;
 			
 			if (f.eval_args_first)
-				args = eval_args(args, locals, user_data);
+				args = eval_args(args, context);
 			
-			new_locals = Locals.from_pattern(locals, f.args, args);
+			new_context = context.Copy();
 			
-			return eval(f.body, new_locals, user_data);
+			Atom.pattern_match(new_context.dict, f.args, args);
+			
+			return eval(f.body, new_context);
 		}
 		
-		public Atom eval(Atom args, Locals locals, object user_data)
+		public Atom eval(Atom args, Context context)
 		{
 			if (args.atomtype == AtomType.Cons)
 			{
@@ -588,11 +593,11 @@ namespace Linkout.Lisp
 					System.Console.Error.WriteLine("CALL {0}", args);
 				if (custom_functions.TryGetValue(function_name, out custom_func))
 				{
-					result = eval_custom(custom_func, function_args, locals, user_data);
+					result = eval_custom(custom_func, function_args, context);
 				}
 				else if (functions.TryGetValue(function_name, out func))
 				{
-					result = func(function_args, locals, user_data);
+					result = func(function_args, context);
 				}
 				else
 					throw new Exception(String.Format("Function {0} not found", function_name));
@@ -604,13 +609,13 @@ namespace Linkout.Lisp
 				return args;
 		}
 
-		public Atom eval_args(Atom args, Locals locals, object user_data)
+		public Atom eval_args(Atom args, Context context)
 		{
 			if (args.atomtype == AtomType.Cons)
 			{
 				Atom car = args.get_car();
 				Atom cdr = args.get_cdr();
-				return new ConsAtom(eval(car, locals, user_data), eval_args(cdr, locals, user_data));
+				return new ConsAtom(eval(car, context), eval_args(cdr, context));
 			}
 			else
 				return args;

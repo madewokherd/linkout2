@@ -43,11 +43,13 @@
     <Compile Include="GameObject.cs" />
     <Compile Include="Box.cs" />
     <Compile Include="Linkout.Lisp\Interpreter.cs" />
-    <Compile Include="Linkout.Lisp\Locals.cs" />
     <Compile Include="ScriptHost.cs" />
     <Compile Include="Frame.cs" />
     <Compile Include="LinkedListEnumerator.cs" />
     <Compile Include="Linkout.Lisp\CustomLispFunction.cs" />
+    <Compile Include="Linkout.Lisp\Context.cs" />
+    <Compile Include="FrameInterpreter.cs" />
+    <Compile Include="FrameContext.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

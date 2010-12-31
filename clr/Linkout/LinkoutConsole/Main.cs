@@ -35,11 +35,10 @@ namespace LinkoutConsole
 			new ConsAtom(new StringAtom("hint"), args).write_to_stream(output);
 		}
 
-		public int Execute (string[] args, System.IO.Stream input, object user_data)
+		public int Execute (string[] args, System.IO.Stream input, Context context)
 		{
 			output = System.Console.OpenStandardOutput();
 			interpreter = new ScriptHost();
-			Linkout.Lisp.Locals no_locals = new Linkout.Lisp.Locals();
 			
 			interpreter.OnNewFrame += OnNewFrame;
 			interpreter.OnHint += OnHint;
@@ -50,7 +49,7 @@ namespace LinkoutConsole
 				atom = Linkout.Lisp.Atom.from_stream(input);
 				if (atom == null)
 					break;
-				atom = interpreter.eval(atom, no_locals, user_data);
+				atom = interpreter.eval(atom, context);
 			}
 			return 0;
 		}
@@ -90,7 +89,7 @@ namespace LinkoutConsole
 				input = System.IO.File.OpenRead(filename);
 			
 			if (args[0] == "e")
-				return Execute(args, input, null);
+				return Execute(args, input, new Context());
 			
 			return Usage();
 		}

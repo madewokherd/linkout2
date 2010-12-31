@@ -51,7 +51,7 @@ namespace Linkout
 			advance_frame(null);
 		}
 		
-		public Atom func_frame(Atom args, Locals locals, object user_data)
+		public Atom func_frame(Atom args, Context context)
 		{
 			Frame new_frame;
 			
@@ -119,7 +119,7 @@ namespace Linkout
 			return NilAtom.nil;
 		}
 
-		public Atom func_advance(Atom args, Locals locals, object user_data)
+		public Atom func_advance(Atom args, Context context)
 		{
 			int i;
 			Atom[] external_events = null;
@@ -159,9 +159,9 @@ namespace Linkout
 				return false;
 		}
 		
-		public Atom func_seek_to(Atom args, Locals locals, object user_data)
+		public Atom func_seek_to(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 			
 			if (frame == null)
 				throw new InvalidOperationException("Create a frame first");
@@ -179,9 +179,9 @@ namespace Linkout
 			return NilAtom.nil;
 		}
 		
-		public Atom func_hint(Atom args, Locals locals, object user_data)
+		public Atom func_hint(Atom args, Context context)
 		{
-			args = eval_args(args, locals, user_data);
+			args = eval_args(args, context);
 
 			if (OnHint != null)
 				OnHint(args);

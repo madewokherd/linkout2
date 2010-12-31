@@ -138,7 +138,7 @@ namespace LinkoutGTK
 				try
 				{
 					scripthost = new ScriptHost();
-					Locals no_locals = new Locals();
+					Context context = new Context();
 					drawing = new LinkoutDrawing.Drawing();
 					
 					is_replay_file = false;
@@ -151,7 +151,7 @@ namespace LinkoutGTK
 						atom = Atom.from_stream(infile);
 						if (atom == null)
 							break;
-						scripthost.eval(atom, no_locals, null);
+						scripthost.eval(atom, context);
 					}
 					
 					if (is_replay_file)

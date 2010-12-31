@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 namespace Linkout.Lisp
 {
 	public abstract class Atom
@@ -334,6 +335,19 @@ namespace Linkout.Lisp
 			to_stream(stream);
 			
 			return encoding.GetString(stream.GetBuffer());
+		}
+		
+		public static void pattern_match(Dictionary<Atom, Atom> names, Atom pattern, Atom atom)
+		{
+			if (pattern.atomtype == AtomType.String)
+			{
+				names[pattern] = atom;
+			}
+			else if (pattern.atomtype == AtomType.Cons && atom.atomtype == AtomType.Cons)
+			{
+				pattern_match(names, pattern.get_car(), atom.get_car());
+				pattern_match(names, pattern.get_cdr(), atom.get_cdr());
+			}
 		}
 	}
 }
