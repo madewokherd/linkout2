@@ -534,6 +534,9 @@ namespace Linkout.Lisp
 		
 		public virtual void set_global(Atom name, Atom val, Context context)
 		{
+			if (immutable)
+				return;
+			
 			if (val == NilAtom.nil)
 				globals.Remove(name);
 			else
