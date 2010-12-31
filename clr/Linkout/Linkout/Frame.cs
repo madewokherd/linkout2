@@ -202,6 +202,8 @@ namespace Linkout
 		{
 			Frame new_frame = copy();
 			
+			interpreter.immutable = true;
+			
 			new_frame.priv_advance(this, external_events);
 			
 			return new_frame;

@@ -38,13 +38,8 @@ namespace Linkout.Lisp
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
 			globals = new Dictionary<Atom, Atom>();
-		}
-
-		public Interpreter (Dictionary<Atom, LispFunction> functions)
-		{
-			this.functions = functions;
-			custom_functions = new Dictionary<Atom, CustomLispFunction>();
-			globals = new Dictionary<Atom, Atom>();
+			
+			immutable = false;
 		}
 
 		public delegate Atom LispFunction(Atom args, Context context);
@@ -54,6 +49,8 @@ namespace Linkout.Lisp
 		protected Dictionary<Atom, CustomLispFunction> custom_functions;
 
 		protected Dictionary<Atom, Atom> globals;
+		
+		public bool immutable;
 		
 		private static readonly bool trace_call = System.Environment.GetEnvironmentVariable("LINKOUT_TRACE") != null;
 		
@@ -274,9 +271,12 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 
-		public virtual void add_custom_function(Atom args, bool eval_args_first, Context context)
+		private void add_custom_function(Atom args, bool eval_args_first, Context context)
 		{
 			CustomLispFunction f;
+			
+			if (immutable)
+				return;
 			
 			f = CustomLispFunction.from_args(args, eval_args_first);
 			
