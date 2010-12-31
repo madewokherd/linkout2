@@ -40,6 +40,7 @@ namespace Linkout.Lisp
 			globals = new Dictionary<Atom, Atom>();
 			
 			immutable = false;
+			isolated = false;
 		}
 
 		public delegate Atom LispFunction(Atom args, Context context);
@@ -50,7 +51,14 @@ namespace Linkout.Lisp
 
 		protected Dictionary<Atom, Atom> globals;
 		
+		/* If immutable is true, functions should not make changes to this object that will be visible to interpreted
+		 * code. */
 		public bool immutable;
+		
+		/* If immutable is true, functions should not make be able to explicitly read or write anything outside the
+		 * interpreted environment, so all programs should be fully determinstic. For example, a function to get the
+		 * current time would not function or would return a constant dummy value. */
+		public bool isolated;
 		
 		private static readonly bool trace_call = System.Environment.GetEnvironmentVariable("LINKOUT_TRACE") != null;
 		

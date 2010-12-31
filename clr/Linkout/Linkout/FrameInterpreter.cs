@@ -11,6 +11,7 @@ namespace Linkout
 			functions[new StringAtom("getown")] = func_getown;
 			functions[new StringAtom("setown")] = func_setown;
 			globals = new Dictionary<Atom, Atom>();
+			isolated = true;
 		}
 		
 		public Atom func_getown(Atom args, Context context)
