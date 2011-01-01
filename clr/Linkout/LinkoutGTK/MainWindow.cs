@@ -114,7 +114,15 @@ namespace LinkoutGTK
 			switch (runstate)
 			{
 			case RunState.Running:
-				scripthost.advance_frame(get_external_events());
+				try
+				{
+					scripthost.advance_frame(get_external_events());
+				}
+				catch (Exception e)
+				{
+					Utils.show_error_dialog(e, this, "Error running script");
+					set_state(RunState.Stopped);
+				}
 				this.drawingarea.QueueDraw();
 				return true;
 			case RunState.Playing:
