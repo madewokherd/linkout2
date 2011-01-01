@@ -57,8 +57,6 @@ namespace Linkout
 				OnNewFrame();
 		}
 		
-		private readonly StringAtom name_box = new StringAtom("box");
-		
 		public void advance_frame(Atom[] external_events)
 		{
 			last_frame = frame = frame.advance(external_events);
@@ -79,41 +77,9 @@ namespace Linkout
 			
 			while (args.atomtype == AtomType.Cons)
 			{
-				Atom obj = args.get_car();
+				Atom instruction = args.get_car();
 				
-				if (obj.atomtype == AtomType.Cons)
-				{
-					Atom typename = obj.get_car();
-					GameObject gameobj;
-					if (typename.Equals(name_box))
-					{
-						gameobj = new Box();
-					}
-					else if (typename.atomtype == AtomType.String)
-					{
-						throw new NotSupportedException(String.Format("Object type {0} unrecognized", typename));
-					}
-					else
-					{
-						args = args.get_cdr();
-						continue;
-					}
-					
-					Atom keyvaluepairs = obj.get_cdr();
-					while (keyvaluepairs.atomtype == AtomType.Cons)
-					{
-						Atom keyvaluepair = keyvaluepairs.get_car();
-						gameobj.setattr(keyvaluepair.get_car(), keyvaluepair.get_cdr().get_car());
-						
-						keyvaluepairs = keyvaluepairs.get_cdr();
-					}
-					
-					new_frame.add_object(gameobj);
-				}
-				else
-				{
-					throw new NotSupportedException(String.Format("Cannot create object from atom {0}", obj));
-				}
+				new_frame.eval(instruction, context);
 				
 				args = args.get_cdr();
 			}

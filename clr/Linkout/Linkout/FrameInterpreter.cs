@@ -28,12 +28,33 @@ namespace Linkout
 	{
 		public FrameInterpreter () : base()
 		{
+			functions[new StringAtom("box")] = func_box;
 			functions[new StringAtom("getown")] = func_getown;
 			functions[new StringAtom("setown")] = func_setown;
 			globals = new Dictionary<Atom, Atom>();
 			isolated = true;
 		}
 		
+		public Atom func_box(Atom args, Context context)
+		{
+			Frame frame = ((FrameContext)context).frame;
+
+			Box result = new Box();
+
+			Atom keyvaluepairs = args;
+			while (keyvaluepairs.atomtype == AtomType.Cons)
+			{
+				Atom keyvaluepair = keyvaluepairs.get_car();
+				result.setattr(keyvaluepair.get_car(), keyvaluepair.get_cdr().get_car());
+				
+				keyvaluepairs = keyvaluepairs.get_cdr();
+			}
+			
+			frame.add_object(result);
+			
+			return new FixedPointAtom(result.id);
+		}
+			
 		public Atom func_getown(Atom args, Context context)
 		{
 			Frame frame = ((FrameContext)context).frame;
