@@ -39,6 +39,9 @@ namespace LinkoutGTK
 			Build ();
 			runstate = RunState.Nothing;
 			frame_delay = 20; /* 50 frames per second */
+			
+			pressed_keys = new Dictionary<uint, bool>();
+			recently_pressed_keys = new Dictionary<uint, bool>();
 		}
 	
 		ScriptHost scripthost;
@@ -55,19 +58,63 @@ namespace LinkoutGTK
 			Application.Quit ();
 			a.RetVal = true;
 		}
-	
+		
 		protected virtual void OnQuitClicked (object sender, System.EventArgs e)
 		{
 			Application.Quit ();
 		}
+
+		Dictionary<uint, bool> pressed_keys;
+
+		Dictionary<uint, bool> recently_pressed_keys;
 		
-				                 
+		protected virtual void OnDrawingareaKeyPressEvent (object o, Gtk.KeyPressEventArgs args)
+		{
+			if (!pressed_keys.ContainsKey(args.Event.KeyValue))
+				recently_pressed_keys[args.Event.KeyValue] = true;
+			pressed_keys[args.Event.KeyValue] = true;
+		}
+		
+		protected virtual void OnDrawingareaKeyReleaseEvent (object o, Gtk.KeyReleaseEventArgs args)
+		{
+			pressed_keys.Remove(args.Event.KeyValue);
+		}
+		
+		private Atom get_key_event(StringAtom name, uint keyval)
+		{
+			Atom val;
+			
+			if (pressed_keys.ContainsKey(keyval) || recently_pressed_keys.ContainsKey(keyval))
+				val = FixedPointAtom.One;
+			else
+				val = FixedPointAtom.Zero;
+			
+			return new ConsAtom(new StringAtom("setglobal"), new ConsAtom(name, new ConsAtom(val, NilAtom.nil)));
+		}
+		
+		private Atom[] get_external_events()
+		{
+			List<Atom> result = new List<Atom>();
+			
+			// Pressed keys
+			
+			// FIXME: Don't hard-code the key values.
+			result.Add(get_key_event(new StringAtom("left-pressed"), (uint)Gdk.Key.Left));
+			result.Add(get_key_event(new StringAtom("right-pressed"), (uint)Gdk.Key.Right));
+			result.Add(get_key_event(new StringAtom("up-pressed"), (uint)Gdk.Key.Up));
+			result.Add(get_key_event(new StringAtom("down-pressed"), (uint)Gdk.Key.Down));
+			
+			recently_pressed_keys.Clear();
+			
+			return result.ToArray();
+		}
+
 		bool advance()
 		{
 			switch (runstate)
 			{
 			case RunState.Running:
-				scripthost.advance_frame();
+				scripthost.advance_frame(get_external_events());
 				this.drawingarea.QueueDraw();
 				return true;
 			case RunState.Playing:
@@ -99,6 +146,8 @@ namespace LinkoutGTK
 				advance_timer = GLib.Timeout.Add((uint)frame_delay, new TimeoutHandler(advance));
 				this.frame_delay = frame_delay;
 			}
+			
+			recently_pressed_keys.Clear();
 			
 			runstate = new_state;
 		}

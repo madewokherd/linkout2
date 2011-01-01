@@ -63,7 +63,12 @@
         <child>
           <widget class="Gtk.DrawingArea" id="drawingarea">
             <property name="MemberName" />
+            <property name="CanDefault">True</property>
+            <property name="HasDefault">True</property>
+            <property name="CanFocus">True</property>
             <signal name="ExposeEvent" handler="OnDrawingareaExposeEvent" />
+            <signal name="KeyPressEvent" handler="OnDrawingareaKeyPressEvent" />
+            <signal name="KeyReleaseEvent" handler="OnDrawingareaKeyReleaseEvent" />
           </widget>
           <packing>
             <property name="Position">1</property>
