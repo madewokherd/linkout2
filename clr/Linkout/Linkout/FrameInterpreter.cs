@@ -29,6 +29,7 @@ namespace Linkout
 		public FrameInterpreter () : base()
 		{
 			functions[new StringAtom("box")] = func_box;
+			functions[new StringAtom("check-rectangle")] = func_check_rectangle;
 			functions[new StringAtom("getown")] = func_getown;
 			functions[new StringAtom("setown")] = func_setown;
 			globals = new Dictionary<Atom, Atom>();
@@ -53,6 +54,70 @@ namespace Linkout
 			frame.add_object(result);
 			
 			return new FixedPointAtom(result.id);
+		}
+		
+		private struct object_atom_pair
+		{
+			public long id;
+			public Atom atom;
+			
+			public object_atom_pair(long id, Atom atom)
+			{
+				this.id = id;
+				this.atom = atom;
+			}
+		}
+		
+		public Atom func_check_rectangle(Atom args, Context context)
+		{
+			Frame frame = ((FrameContext)context).frame;
+			Atom[] arglist = eval_n_args(args, 6, 7, "check-rectangle", context);
+			LinkedList<object_atom_pair> results = new LinkedList<object_atom_pair>();
+			int x, y, width, height;
+			
+			if (arglist == null)
+				return NilAtom.nil;
+			
+			try
+			{
+				x = (int)(arglist[0].get_fixedpoint() >> 16);
+				y = (int)(arglist[1].get_fixedpoint() >> 16);
+				width = (int)(arglist[2].get_fixedpoint() >> 16);
+				height = (int)(arglist[3].get_fixedpoint() >> 16);
+			}
+			catch (NotSupportedException)
+			{
+				// One of the arguments is not a number
+				return NilAtom.nil;
+			}
+			
+			foreach (GameObject obj in frame)
+			{
+				Atom[] pixel_types = obj.check_rectangle(x, y, width, height);
+				
+				if (pixel_types != null)
+				{
+					foreach (Atom pixel_type in pixel_types)
+					{
+						results.AddLast(new object_atom_pair(obj.id, pixel_type));
+					}
+				}
+			}
+			
+			foreach (object_atom_pair result in results)
+			{
+				Context new_context = context.Copy();
+				
+				new_context.dict[arglist[4]] = new FixedPointAtom(result.id);
+				new_context.dict[arglist[5]] = result.atom;
+				
+				Atom res = eval(arglist[6], new_context);
+				
+				if (res != NilAtom.nil)
+					return res;
+			}
+			
+			return NilAtom.nil;
 		}
 			
 		public Atom func_getown(Atom args, Context context)

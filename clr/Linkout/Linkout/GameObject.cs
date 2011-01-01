@@ -110,6 +110,8 @@ namespace Linkout
 		
 		public abstract Atom to_atom();
 		
+		public abstract Atom[] check_rectangle(int x, int y, int width, int height);
+		
 		protected int get_base_hash()
 		{
 			int result=0;

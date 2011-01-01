@@ -108,6 +108,22 @@ namespace Linkout.Lisp
 			return result;
 		}
 
+		public Atom[] eval_n_args(Atom args, uint n, uint m, string function_name, Context context)
+		{
+			Atom[] result = get_n_args(args, m, function_name);
+			uint i;
+			
+			if (result != null)
+			{
+				for (i=0; i<n; i++)
+				{
+					result[i] = eval(result[i], context);
+				}
+			}
+			
+			return result;
+		}
+		
 		public Atom func_mult(Atom args, Context context)
 		{
 			long result = 0x10000;

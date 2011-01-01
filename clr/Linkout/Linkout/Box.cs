@@ -43,6 +43,43 @@ namespace Linkout
 			return new Box(this);
 		}
 		
+		private static Atom x_atom = new StringAtom("x");
+		private static Atom y_atom = new StringAtom("y");
+		private static Atom width_atom = new StringAtom("width");
+		private static Atom height_atom = new StringAtom("height");
+		
+		public override Atom[] check_rectangle (int x, int y, int width, int height)
+		{
+			int my_x, my_y, my_width, my_height;
+			
+			try
+			{
+				my_x = (int)(getattr(x_atom).get_fixedpoint() >> 16);
+				my_y = (int)(getattr(y_atom).get_fixedpoint() >> 16);
+				my_width = (int)(getattr(width_atom).get_fixedpoint() >> 16);
+				my_height = (int)(getattr(height_atom).get_fixedpoint() >> 16);
+			}
+			catch (NotSupportedException)
+			{
+				// No such attribute or not a number
+				return null;
+			}
+			
+			if (my_width <= 0 || my_height <= 0 || width <= 0 || height <= 0 ||
+			    (my_x >= x + width) || (x >= my_x + my_width) ||
+			    (my_y >= y + height) || (y >= my_y + my_height))
+			{
+				// Rectangles do not intersect
+				return null;
+			}
+			else
+			{
+				Atom[] result = new Atom[1];
+				result[0] = FixedPointAtom.One;
+				return result;
+			}
+		}
+		
 		public override int GetHashCode ()
 		{
 			return get_base_hash() ^ 0x7b68d637;
