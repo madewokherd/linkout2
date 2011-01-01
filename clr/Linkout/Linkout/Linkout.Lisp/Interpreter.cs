@@ -55,7 +55,7 @@ namespace Linkout.Lisp
 		 * code. */
 		public bool immutable;
 		
-		/* If immutable is true, functions should not make be able to explicitly read or write anything outside the
+		/* If isolated is true, functions should not make be able to explicitly read or write anything outside the
 		 * interpreted environment, so all programs should be fully determinstic. For example, a function to get the
 		 * current time would not function or would return a constant dummy value. */
 		public bool isolated;
