@@ -28,6 +28,7 @@ namespace Linkout.Lisp
 		public FixedPointAtom (long int_value) : base(AtomType.FixedPoint)
 		{
 			this.int_value = (int_value << 16) >> 16;
+			this.calculated_hashcode = false;
 		}
 
 		public override long get_fixedpoint()
@@ -63,9 +64,22 @@ namespace Linkout.Lisp
 			return this.int_value == oth.int_value;
 		}
 		
+		private bool calculated_hashcode;
+		private int hashcode;
+
 		public override int GetHashCode ()
 		{
-			return (int)((this.int_value >> 16) ^ (this.int_value & 0xffff) ^ 0xfa425617);
+			int result;
+			
+			if (calculated_hashcode)
+				return hashcode;
+			
+			result = (int)((this.int_value >> 16) ^ (this.int_value & 0xffff) ^ 0xfa425617);
+			
+			hashcode = result;
+			calculated_hashcode = true;
+			
+			return result;
 		}
 		
 		public override void to_stream (System.IO.Stream output)

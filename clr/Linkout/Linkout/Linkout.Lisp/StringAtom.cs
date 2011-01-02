@@ -28,12 +28,14 @@ namespace Linkout.Lisp
 		public StringAtom (byte[] string_value) : base(AtomType.String)
 		{
 			this.string_value = string_value;
+			this.calculated_hashcode = false;
 		}
 
 		public StringAtom (string string_value) : base(AtomType.String)
 		{
 			System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
 			this.string_value = encoding.GetBytes(string_value);
+			this.calculated_hashcode = false;
 		}
 
 		public override long get_fixedpoint()
@@ -75,11 +77,22 @@ namespace Linkout.Lisp
 			return true;
 		}
 		
+		private bool calculated_hashcode;
+		private int hashcode;
+		
 		public override int GetHashCode ()
 		{
 			int result = -0x3465eda6, i;
+			
+			if (calculated_hashcode)
+				return hashcode;
+			
 			for (i=0; i<this.string_value.Length; i++)
 				result = result * 33 + i;
+			
+			hashcode = result;
+			calculated_hashcode = true;
+			
 			return result;
 		}
 		

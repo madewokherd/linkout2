@@ -30,6 +30,7 @@ namespace Linkout.Lisp
 		{
 			this.car = car;
 			this.cdr = cdr;
+			this.calculated_hashcode = false;
 		}
 
 		public override Int64 get_fixedpoint()
@@ -65,9 +66,22 @@ namespace Linkout.Lisp
 			return this.car.Equals(oth.car) && this.cdr.Equals(oth.cdr);
 		}
 		
+		private bool calculated_hashcode;
+		private int hashcode;
+
 		public override int GetHashCode ()
 		{
-			return (this.cdr.GetHashCode() * 17) + this.car.GetHashCode();
+			int result;
+			
+			if (calculated_hashcode)
+				return hashcode;
+			
+			result = (this.cdr.GetHashCode() * 17) + this.car.GetHashCode();
+			
+			hashcode = result;
+			calculated_hashcode = true;
+			
+			return result;
 		}
 		
 		private static void write_tail (System.IO.Stream output, Atom atom)
