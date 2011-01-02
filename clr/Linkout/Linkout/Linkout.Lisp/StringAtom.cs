@@ -19,6 +19,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 namespace Linkout.Lisp
 {
 	public class StringAtom : Atom
@@ -38,6 +39,28 @@ namespace Linkout.Lisp
 			this.calculated_hashcode = false;
 		}
 
+		private static Dictionary<StringAtom, StringAtom> interned_atoms = new Dictionary<StringAtom, StringAtom>();
+		
+		public StringAtom intern()
+		{
+			StringAtom result;
+			
+			if (!interned_atoms.TryGetValue(this, out result))
+			{
+				try
+				{
+					interned_atoms.Add(this, this);
+					return this;
+				}
+				catch (ArgumentException)
+				{
+					return interned_atoms[this];
+				}
+			}
+			
+			return result;
+		}
+		
 		public override long get_fixedpoint()
 		{
 			throw new NotSupportedException();
@@ -66,6 +89,8 @@ namespace Linkout.Lisp
 		public override bool Equals (object obj)
 		{
 			int i;
+			if (Object.ReferenceEquals(this, obj))
+				return true;
 			if (obj.GetType() != this.GetType())
 				return false;
 			StringAtom oth = (StringAtom)obj;

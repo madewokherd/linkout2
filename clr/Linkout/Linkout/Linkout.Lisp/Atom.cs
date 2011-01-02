@@ -237,7 +237,7 @@ namespace Linkout.Lisp
 					result.Add((byte)current_byte);
 				}
 				
-				return new StringAtom(result.ToArray());
+				return new StringAtom(result.ToArray()).intern();
 			}
 			else if ((current_byte >= 'a' && current_byte <= 'z') ||
 			         (current_byte >= 'A' && current_byte <= 'Z') ||
@@ -277,7 +277,7 @@ namespace Linkout.Lisp
 					result.Add((byte)current_byte);
 				}
 				
-				return new StringAtom(result.ToArray());
+				return new StringAtom(result.ToArray()).intern();
 			}
 			else if (current_byte >= '0' && current_byte <= '9')
 			{

@@ -28,10 +28,10 @@ namespace Linkout
 	{
 		public FrameInterpreter () : base()
 		{
-			functions[new StringAtom("box")] = func_box;
-			functions[new StringAtom("check-rectangle")] = func_check_rectangle;
-			functions[new StringAtom("getown")] = func_getown;
-			functions[new StringAtom("setown")] = func_setown;
+			functions[new StringAtom("box").intern()] = func_box;
+			functions[new StringAtom("check-rectangle").intern()] = func_check_rectangle;
+			functions[new StringAtom("getown").intern()] = func_getown;
+			functions[new StringAtom("setown").intern()] = func_setown;
 			globals = new Dictionary<Atom, Atom>();
 			isolated = true;
 		}

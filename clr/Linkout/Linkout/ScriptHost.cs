@@ -26,10 +26,10 @@ namespace Linkout
 	{
 		public ScriptHost () : base()
 		{
-			functions[new StringAtom("advance")] = func_advance;
-			functions[new StringAtom("frame")] = func_frame;
-			functions[new StringAtom("hint")] = func_hint;
-			functions[new StringAtom("seek-to")] = func_seek_to;
+			functions[new StringAtom("advance").intern()] = func_advance;
+			functions[new StringAtom("frame").intern()] = func_frame;
+			functions[new StringAtom("hint").intern()] = func_hint;
+			functions[new StringAtom("seek-to").intern()] = func_seek_to;
 		}
 
 		public delegate void NewFrameEvent();
