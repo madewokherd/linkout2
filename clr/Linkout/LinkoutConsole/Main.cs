@@ -33,7 +33,9 @@ namespace LinkoutConsole
 @"Usage: linkout <command> [<switches>] [<filename>]
 
 <commands>
-  e: Execute a script or replay and write out the final frame
+  b: Run script at maximum speed and print out FPS.
+  f: Execute a script or replay and write out the final frame
+  t: Execute a script or replay and write out every frame and hint
 
 <switches>
   -si: Read data from stdin
@@ -45,23 +47,20 @@ namespace LinkoutConsole
 		Stream output;
 		ScriptHost interpreter;
 		
-		private void OnNewFrame()
+		private void TraceNewFrame()
 		{
 			interpreter.frame.to_atom().write_to_stream(output);
 		}
 
-		private void OnHint(Atom args)
+		private void TraceHint(Atom args)
 		{
 			new ConsAtom(new StringAtom("hint"), args).write_to_stream(output);
 		}
 
-		public int Execute (string[] args, System.IO.Stream input, Context context)
+		public int Execute (string[] args, System.IO.Stream input, ScriptHost interpreter)
 		{
 			output = System.Console.OpenStandardOutput();
-			interpreter = new ScriptHost();
-			
-			interpreter.OnNewFrame += OnNewFrame;
-			interpreter.OnHint += OnHint;
+			Context context = new Context();
 			
 			while (true)
 			{
@@ -72,6 +71,67 @@ namespace LinkoutConsole
 				atom = interpreter.eval(atom, context);
 			}
 			return 0;
+		}
+		
+		public int Benchmark (string[] args, System.IO.Stream input)
+		{
+			int result;
+			
+			interpreter = new ScriptHost();
+			
+			result = Execute(args, input, interpreter);
+			
+			if (result == 0)
+			{
+				DateTime start_time = DateTime.Now;
+				DateTime prev_time = start_time;
+				
+				while (true)
+				{
+					interpreter.advance_frame();
+					
+					// FIXME: This assumes we start at frame 0.
+					if (interpreter.frame.frame_number % 1000 == 0)
+					{
+						DateTime now = DateTime.Now;
+						
+						Console.WriteLine("Frame number={0}, average fps={1}, current fps={2}",
+						                  interpreter.frame.frame_number,
+						                  interpreter.frame.frame_number / (now-start_time).TotalSeconds,
+						                  1000 / (now-prev_time).TotalSeconds);
+						
+						prev_time = now;
+					}
+				}
+			}
+			
+			return result;
+		}
+		
+		public int CalculateFinalFrame (string[] args, System.IO.Stream input)
+		{
+			int result;
+			
+			interpreter = new ScriptHost();
+			
+			result = Execute(args, input, interpreter);
+			
+			if (result == 0)
+			{
+				interpreter.frame.to_atom().write_to_stream(output);
+			}
+			
+			return result;
+		}
+		
+		public int Trace (string[] args, System.IO.Stream input)
+		{
+			interpreter = new ScriptHost();
+			
+			interpreter.OnNewFrame += TraceNewFrame;
+			interpreter.OnHint += TraceHint;
+
+			return Execute(args, input, interpreter);
 		}
 		
 		public int instance_main(string[] args)
@@ -108,8 +168,12 @@ namespace LinkoutConsole
 			else if (filename != null)
 				input = System.IO.File.OpenRead(filename);
 			
-			if (args[0] == "e")
-				return Execute(args, input, new Context());
+			if (args[0] == "b")
+				return Benchmark(args, input);
+			if (args[0] == "f")
+				return CalculateFinalFrame(args, input);
+			else if (args[0] == "t")
+				return Trace(args, input);
 			
 			return Usage();
 		}
