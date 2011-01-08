@@ -88,8 +88,8 @@ Lot, the language in which games and frames will be authored, is similar to sche
 Objects in this language are called "atoms".
 An atom may be any of the following types:
  * Nil. The nil type has only one possible value, called nil, represented in the language as ().
- * String. Strings are 8-bit. The string encoding utf8 by convention, but the language does not guarantee this. If a string starts with an alphanumeric character, or one of the ascii characters +-*/%<>=, and it does not contain whitespace, or a close parenthesis, or a digit immediately following the first character when the first character is -, it may be represented as its contents in lot. Otherwise, it should be represented as a double-quoted string with backslash acting as an escape character.
  * Number. These are 48-bit values, where the least significant 16 bits are the fractional part. They may be represented as decimal numbers, or hex if prefixed with 0x. In both cases, the . character separates the whole part from the fractional part. If the fraction cannot be represented exactly, round down.
+ * String. Strings are 8-bit. The string encoding utf8 by convention, but the language does not guarantee this. If a string starts with an alphanumeric character, or one of the ascii characters +-*/%<>=, and it does not contain whitespace, or a close parenthesis, or a digit immediately following the first character when the first character is -, it may be represented as its contents in lot. Otherwise, it should be represented as a double-quoted string with backslash acting as an escape character.
  * Cons. A cons is a reference to two other atoms of any type. The first atom referenced is called the "car" and the second is called the "cdr". A cons may be represented as (car . cdr). Like in scheme, a cons may be used to create a linked list something like (a . (b . (c . ()))). Also, like scheme, the previous expression can be written as (a b c).
 
 Atoms are immutable, and a cons can never be recursive.
@@ -101,8 +101,14 @@ For serialization and deserialization, the engine uses a simplified version of s
 
 The engine understands the following types:
 
+"dict" type:
+ * An object of the "dict" type occupies no pixels.
+
 "box" type:
  * An object of the "box" type occupies all pixels within the rectangular area determined by its "x", "y", "width", and "height" attributes. These pixels have a type of 1.
+
+"mask" type:
+ * An object of the "mask" type occupies no pixels, but it stores a 32-bit value for every pair of 32-bit "x" and "y" co-ordinates. Each value is initially 0.
 
 "sprite" type:
  * An object of the "sprite" type occupies a fixed set of pixels, with an offset determined by its "x" and "y" attributes.
@@ -127,6 +133,8 @@ The function's expected argument list (the cdr of the functions listed below) is
 If a value cannot be found for each string in the expected argument list, the expression returns nil, and a warning may be emitted.
 If the expected argument list has nil where the arguments have some other value, the extra value is ignored, and a warning may be emitted.
 The behavior and result of the expression is then determined by the particular function called.
+
+Functions marked with + are not implemented.
 
 The lot base language supports the following functions:
  * *(if condition truepart falsepart) - If the condition is true, evaluate truepart and return its result. If the condition is false, evaluate falsepart and return its result.
@@ -156,65 +164,79 @@ The lot base language supports the following functions:
  * (bitwise-xor . args) Start with 0. Take the bitwise exclusive or of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last exclusive or.
  * (trunc x) - Equivalent to (bitwise-and x -1)
  * (- . x) - Take x as a list of numbers. Ignore the first item that is not a number and everything that follows. If the list contains only one number, return its additive inverse. If the list contains more than one number, subtract every number starting with the second from the first. If the list contains no numbers, return nil.
- * (/ a b) - Return the result of dividing a by b, or nil if either b or a is not a number. Round down if the result cannot be expressed exactly (rather than towards 0 as many programming languages do with integer arithmetic).
- * (% a b) - Equivalent to (- a (* (trunc (/ a b)) b)), or the (possibly fractional) modulo of a and b, which is between b and 0 (unlike in many programming languages).
- * (< a b) - Return 1 if a is less than b, 0 otherwise.
- * (> a b) - Return 1 if a is greater than b, 0 otherwise.
- * (<= a b) - Return 1 if a is less than or equal to b, 0 otherwise.
- * (>= a b) - Return 1 if a is greater than or equal to b, 0 otherwise.
+ * +(/ a b) - Return the result of dividing a by b, or nil if either b or a is not a number. Round down if the result cannot be expressed exactly (rather than towards 0 as many programming languages do with integer arithmetic).
+ * +(% a b) - Equivalent to (- a (* (trunc (/ a b)) b)), or the (possibly fractional) modulo of a and b, which is between b and 0 (unlike in many programming languages).
  * (= a b) - Return 1 if a is equal to b, 0 otherwise.
- * (<> a b) - Return 0 if a is equal to b, 1 otherwise.
- * (cons a b) - Return a cons of a and b.
- * (car x) - Returns the car of x, or nil if x is not a cons.
- * (cdr x) - Returns the cdr of x, or nil if x is not a cons.
- * sin, cos, tan, asin, acos, tan - TBD trig functions. (The results will have to be specified exactly.)
+ * +(< a b) - Return 1 if a is less than b, 0 otherwise. When two items of differing type are compared, they are ordered nil < number < string < cons. Strings are compared by the numerical value at each index. If a string X is longer than string Y but all values in X equal the corresponding values in Y (X starts with Y), X < Y. A cons X is less than a cons Y if and only if (or (< (car X) (car Y)) (and (= (car X) (car Y)) (< (cdr X) (cdr Y)))).
+ * +(> a b) - Return 1 if a is greater than b, 0 otherwise. This is equivalent to (not (or (= a b) (< a b))) but may be implemented differently.
+ * +(<= a b) - Return 1 if a is less than or equal to b, 0 otherwise. Equivalent to (or (= a b) (< a b)).
+ * +(>= a b) - Return 1 if a is greater than or equal to b, 0 otherwise. Equivalent to (not (< a b)).
+ * +(<> a b) - Return 0 if a is equal to b, 1 otherwise. Equivalent to (not (= a b)).
+ * +(cons a b) - Return a cons of a and b.
+ * +(car x) - Returns the car of x, or nil if x is not a cons.
+ * +(cdr x) - Returns the cdr of x, or nil if x is not a cons.
+ * +(import filename) - Search for the given filename in a set of standard paths. If this is the first time import is called for that string, evaluate the contents of the filename. An implementation may choose to add .lot to the end of the filename, or give certain values special treatment. If the file could not be opened and parsed, abort.
+ * +(sqrt x) - Returns the smallest nonnegative number y where (<= (* y y) x). If x is negative, return nil.
+ * sin, cos, tan, asin, acos, atan - TBD trig functions. (The results will have to be specified exactly.)
 
 Game scripts support the following functions:
- * *(frame . expressions) - Create an empty frame, then evaluate (begin . expressions) in that frame. If there is a current frame, do nothing (an implementaion may warn if the frame states do not match).
- * (advance) - Calculate the next frame (including any external events, from the script or the implementation), then set it as the current frame. This locks both the old and new frame so that they cannot be modified.
+ * *(frame . expressions) - Create an empty frame, then evaluate (begin . expressions) in that frame. If there is a current frame, do nothing (an implementaion may warn if the frame states do not match). The frame inherits all user-defined functions and masks that exist at the time it is created.
+ * +(advance) - Calculate the next frame (including any external events, from the script or the implementation), then set it as the current frame. This locks both the old and new frame so that they cannot be modified.
  * (seek-to n) - Find the nth frame and set it to the current frame. When seeking backwards, frames are not discarded until some other function sets the current frame. Thus it is possible to seek forwards.
- * (getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc. If there is no curent frame, return nil.
- * *(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can modify the state of the first frame if the first frame has not yet been locked.
- * (extern . args) - Add each item in args to a list of external events to apply when (advance) is next called.
+ * +(getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc. If there is no curent frame, return nil.
+ * +*(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can modify the state of the first frame if the first frame has not yet been locked.
+ * +(extern . args) - Add each item in args to a list of external events to apply when (advance) is next called.
  * (hint . args) - Do nothing. The implementation may do something with the value of args or not.
+ * +(draw . args) - Draw something. This is only valid in very specific contexts, and the meaning of args is implementation-defined.
+ * +(load-mask maskname filename) - Read a file (typically an image) and create a mask from it. Filename may be a list, in which case the first item in the list is a filename, and the rest is an implementation-defined mechanism to help the implementation find/interpret data within the file. For example, some implementations may regard (filename x y width height) as a request to read only a specific region of the image. The supported image formats and how they map to values in the mask are implementation-defined. In general, images with palettes should map palette indexes to mask values directly. Full-color images should map to a non-premultiplied ARGB value (of the form 0xAARRGGBB) representing the colors. Name must be a string.
+ * +(create-mask maskname data) - Create a mask from literal data. The data argument is a list of lists of numbers. Each list of numbers represents a row, starting at (0,0) and working down. Name must be a string.
+ * +(expand-mask maskname data width) - Create a mask from compressed data. The data argument is a Base-64-encoded gzipped string of little-endian binary 32-bit values. The nth value has an x co-ordinate of n%width and a y co-ordinate of floor(n/width). Name must be a string.
 
 Frames support the following functions:
- * (setattr id name value) - Set the named attribute on the given object to the given value. If the object does not exist or the frame is currently immutable, do nothing.
- * (getattr id name) - Return the value associated with the named attribute on the given object. If the given object does not exist or does not contain the named attriute, return nil.
- * (delattr id name) - Equivalent to (setattr id name ())
+ * +*(dict . attrs) - Create a dictionary object. This type of object has attributes but no collision detection. attrs is a list of literal (not to be evaluated) name/value pairs that make up the initial object attributes. Return the new object's id.
+ * *(box . attrs) - Create a box object. attrs is a list of literal (not to be evaluated) name/value pairs that make up the initial object attributes. Return the new object's id.
+ * +*(mask . attrs) - Create a mask object. attrs is a list of literal (not to be evaluated) name/value pairs that make up the initial object attributes. Return the new object's id.
+ * +*(sprite . attrs) - Create a sprite object. attrs is a list of literal (not to be evaluated) name/value pairs that make up the initial object attributes. Return the new object's id.
+ * +*(tilemap . attrs) - Create a sprite object. attrs is a list of literal (not to be evaluated) name/value pairs that make up the initial object attributes. Return the new object's id.
+ * +(set-mask-value id x y value) - Set the value at (trunc x), (trunc y) in the given mask or tilemap to (trunc value). If the id is not a number, do nothing.
+ * +(get-mask-value id x y) - Return the value at (trunc x), (trunc y) in the given mask or tilemap. The id may be a number or a string.
+ * +(copy-mask-rect dst-id dst-x dst-y src-id src-x src-y width height) - Copy the values in the source mask or tilemap at src-x, src-y and extending right and down for the given width and height to the destination mask or tilemap. The destination must be a number. The source and destination regions may overlap, in which case this has the same effect as if a temporary copy of the data were made and then written to the destination.
+ * +(setattr id name value) - Set the named attribute on the given object to the given value. If the object does not exist or the frame is currently immutable, do nothing.
+ * +(getattr id name) - Return the value associated with the named attribute on the given object. If the given object does not exist or does not contain the named attriute, return nil.
+ * +(delattr id name) - Equivalent to (setattr id name ())
  * *(check-rectangle x y width height objectidname pixeltypename body) - Evalate x, y, width, height, objectidname, and pixeltypename. Query the engine for a set of pixels in the given rectangle that are occupied by any object. Build this list before calling body. For each group of pixels, sorted by objectidname then by pixeltypename, evaluate body with the following locals set:
   * objectidname - The id of the found object.
   * pixeltypename - The pixel type of the found pixels.
   If body returns any value other than (), return it and do not call body again.
- * *(foreach-object objectidname body) - Evaluate objectidname. For each object that exists at the time this function is called, sorted by id, evaluate body with local objectidname set to the id of that object. If body returns any value other than (), return it and do not call body again.
- * *(check-object id x y objectidname pixeltypename body) - Same as check-rectangle, except that only the region that would be occupied by the given object, if it had the given x and y coordinates, is searched, and pixels occupied by the given object will not be returned.
- * (getpixeltype id xofs yofs) - If the object occupies the pixel at the given x and y offsets (relative to its x and y attributes), return the pixel type at that offset. Otherwise, return nil.
- * *(check-object-pixels id x y ownpixeltypename objectidname pixeltypename body) - Same as check-object, except that the pixel types in the given object are treated separately. ownpixeltypename will be set to the pixel type of the pixels that would be occupied by the current object if it had the given x and y value and are occupied by objectidname with pixeltypename. The results are returned in order by objectidname, pixeltypename, and ownpixeltypename.
- * *(check-object-difference id x y xofs yofs ownpixeltypename objectidname pixeltypename body) - Same as check-object, except that the pixels that would be occupied by the given object, if that object were at (x+xofs, y+xofs), are ignored.
- * (getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc.
- * *(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can be used to inspect (but not modify) the state of previous frames. It can, however, modify the state of the current frame.
- * (hint . args) - Add args (not each argument, but the single value args) to a list of hints for the current frame. This list may be meaningful to the game script or the language implementation, or it may not.
- * (get-hints) - Return the list of hints for the current frame, in the order in which they were added.
+ * +*(foreach-object objectidname body) - Evaluate objectidname. For each object that exists at the time this function is called, sorted by id, evaluate body with local objectidname set to the id of that object. If body returns any value other than (), return it and do not call body again.
+ * +*(check-object id x y objectidname pixeltypename body) - Same as check-rectangle, except that only the region that would be occupied by the given object, if it had the given x and y coordinates, is searched, and pixels occupied by the given object will not be returned.
+ * +(getpixeltype id xofs yofs) - If the object occupies the pixel at the given x and y offsets (relative to its x and y attributes), return the pixel type at that offset. Otherwise, return nil.
+ * +*(check-object-pixels id x y ownpixeltypename objectidname pixeltypename body) - Same as check-object, except that the pixel types in the given object are treated separately. ownpixeltypename will be set to the pixel type of the pixels that would be occupied by the current object if it had the given x and y value and are occupied by objectidname with pixeltypename. The results are returned in order by objectidname, pixeltypename, and ownpixeltypename.
+ * +*(check-object-difference id x y xofs yofs ownpixeltypename objectidname pixeltypename body) - Same as check-object, except that the pixels that would be occupied by the given object, if that object were at (x+xofs, y+xofs), are ignored.
+ * +(getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc.
+ * +*(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can be used to inspect (but not modify) the state of previous frames. It can, however, modify the state of the current frame.
+ * +(hint . args) - Add args (not each argument, but the single value args) to a list of hints for the current frame. This list may be meaningful to the game script or the language implementation, or it may not.
+ * +(get-hints) - Return the list of hints for the current frame, in the order in which they were added.
 
 The following are important for frames but should be library functions:
- * (setown name value) - Equivalent to (setattr (getlocal self) name value)
- * (getown name) - Equivalent to (getattr (getlocal self) name)
- * (delown name) - Equivalent to (delattr (getlocal self) name)
- * (setother name value) - Equivalent to (setattr (getlocal other) name value)
- * (getother name) - Equivalent to (getattr (getlocal other) name)
- * (delother name) - Equivalent to (delattr (getlocal other) name)
- * (die) - Equivalent to (setown deleted 1)
- * (kill) - Equivalent to (setother deleted 1)
- * (getpixelattr id pixeltype name) - If the given object has an attribute named getpixel, evaluate the contents of that attribute with locals id set to id, pixeltype set to pixeltype, and name set to name. Otherwise, return (getattr id name).
- * (setpixelattr id pixeltype name value) - If the given object has an attribute named setpixel, evaluate the contents of that attribute with locals id set to id, pixeltype set to pixeltype, name set to name, and value set to value. Otherwise, return (setattr id name value).
- * (delpixelattr id pixeltype name) - Equivalent to (setpixelattr id pixeltype name ()).
- * (getownpixel name) - Equivalent to (getpixelattr (getlocal self) (getlocal ownpixeltype) name)
- * (setownpixel name value) - Equivalent to (setpixelattr (getlocal self) (getlocal ownpixeltype) name value)
- * (delownpixel name) - Equivalent to (setpixelattr (getlocal self) (getlocal ownpixeltype) name ())
- * (getotherpixel name) - Equivalent to (getpixelattr (getlocal other) (getlocal otherpixeltype) name)
- * (setotherpixel name value) - Equivalent to (setpixelattr (getlocal other) (getlocal otherpixeltype) name value)
- * (delotherpixel name) - Equivalent to (setpixelattr (getlocal other) (getlocal otherpixeltype) name ())
- * (updatepos id ownbeforecollide ownaftercollide otherbeforeupdate otheraftercollide) - While the given object's mdx and mdy variables are not equal to 0 and the given object's deleted attribute is unset (equal to ()), update the current object's position, in steps up to as large as one pixel, by repeating the following steps. If mdx is greater than 0, calculate the lesser of 1 or mdx to the object's x position, which will henceforth be referred to as the "step". Subtract the step from mdx. If adding the step to x would change the whole part of x, query the engine for a set of pixels that are occupied by other objects and are in the space that the object would newly occupy or would occupy with a different type of pixel. For each group of pixels, evaluate ownbeforecollide and (getother otherbeforecollide). If none of the evaluated code has called (stop) or marked the current object for destruction, update the x coordinate and call ownaftercollide and (getother otheraftercollide) for the same group of pixels (i.e. do NOT check for collisions again, meaning that the "after" functions are called if and only if the "before" function is called and the object moves). If mdx is negative, use a negative step instead. If mdx is 0 and mdy is non-zero, go through a similar procedure with y co-ordinates instead. Repeat until both mdx and mdy are 0. The following locals will be set when calling collision functions:
+ * +(setown name value) - Equivalent to (setattr (getlocal self) name value)
+ * +(getown name) - Equivalent to (getattr (getlocal self) name)
+ * +(delown name) - Equivalent to (delattr (getlocal self) name)
+ * +(setother name value) - Equivalent to (setattr (getlocal other) name value)
+ * +(getother name) - Equivalent to (getattr (getlocal other) name)
+ * +(delother name) - Equivalent to (delattr (getlocal other) name)
+ * +(die) - Equivalent to (setown deleted 1)
+ * +(kill) - Equivalent to (setother deleted 1)
+ * +(getpixelattr id pixeltype name) - If the given object has an attribute named getpixel, evaluate the contents of that attribute with locals id set to id, pixeltype set to pixeltype, and name set to name. Otherwise, return (getattr id name).
+ * +(setpixelattr id pixeltype name value) - If the given object has an attribute named setpixel, evaluate the contents of that attribute with locals id set to id, pixeltype set to pixeltype, name set to name, and value set to value. Otherwise, return (setattr id name value).
+ * +(delpixelattr id pixeltype name) - Equivalent to (setpixelattr id pixeltype name ()).
+ * +(getownpixel name) - Equivalent to (getpixelattr (getlocal self) (getlocal ownpixeltype) name)
+ * +(setownpixel name value) - Equivalent to (setpixelattr (getlocal self) (getlocal ownpixeltype) name value)
+ * +(delownpixel name) - Equivalent to (setpixelattr (getlocal self) (getlocal ownpixeltype) name ())
+ * +(getotherpixel name) - Equivalent to (getpixelattr (getlocal other) (getlocal otherpixeltype) name)
+ * +(setotherpixel name value) - Equivalent to (setpixelattr (getlocal other) (getlocal otherpixeltype) name value)
+ * +(delotherpixel name) - Equivalent to (setpixelattr (getlocal other) (getlocal otherpixeltype) name ())
+ * +(updatepos id ownbeforecollide ownaftercollide otherbeforeupdate otheraftercollide) - While the given object's mdx and mdy variables are not equal to 0 and the given object's deleted attribute is unset (equal to ()), update the current object's position, in steps up to as large as one pixel, by repeating the following steps. If mdx is greater than 0, calculate the lesser of 1 or mdx to the object's x position, which will henceforth be referred to as the "step". Subtract the step from mdx. If adding the step to x would change the whole part of x, query the engine for a set of pixels that are occupied by other objects and are in the space that the object would newly occupy or would occupy with a different type of pixel. For each group of pixels, evaluate ownbeforecollide and (getother otherbeforecollide). If none of the evaluated code has called (stop) or marked the current object for destruction, update the x coordinate and call ownaftercollide and (getother otheraftercollide) for the same group of pixels (i.e. do NOT check for collisions again, meaning that the "after" functions are called if and only if the "before" function is called and the object moves). If mdx is negative, use a negative step instead. If mdx is 0 and mdy is non-zero, go through a similar procedure with y co-ordinates instead. Repeat until both mdx and mdy are 0. The following locals will be set when calling collision functions:
    * self - The object whose attribute is being evaluated.
    * other - The object whose attribute is not being evaluated (either id or an object it will collide with).
    * moving-object - The id passed to updatepos.
@@ -222,6 +244,6 @@ The following are important for frames but should be library functions:
    * yofs - The displacement applied to y this step.
    * ownpixel - The pixeltype of self involved in the collision.
    * ownpixel - The pixeltype of other involved in the collision.
- * (iammoving) - When called in the context of code evaluated by updatepos, return 1 if the code being evaluated was passed to that command as "own" code (as opposed to "other" code). Otherwise, return 0.
- * (stop) - When evaluated before a collision, prevent the object that would move from moving. Return nil.
+ * +(iammoving) - When called in the context of code evaluated by updatepos, return 1 if the code being evaluated was passed to that command as "own" code (as opposed to "other" code). Otherwise, return 0.
+ * +(stop) - When evaluated before a collision, prevent the object that would move from moving. Return nil.
 
