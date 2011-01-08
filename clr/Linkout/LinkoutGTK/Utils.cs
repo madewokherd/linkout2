@@ -20,6 +20,7 @@
 
 using System;
 using System.IO;
+using Mono.Unix;
 using Gtk;
 
 namespace LinkoutGTK

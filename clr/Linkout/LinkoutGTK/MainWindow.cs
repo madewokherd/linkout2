@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using Mono.Unix;
 using GLib;
 using Gtk;
 using Gtk.DotNet;
@@ -186,7 +187,7 @@ namespace LinkoutGTK
 			string filename;
 			int response;
 			
-			dialog = new FileChooserDialog("Open File", this,
+			dialog = new FileChooserDialog(Catalog.GetString("Open File"), this,
 			                               FileChooserAction.Open,
 			                               Stock.Cancel, ResponseType.Cancel,
 			                               Stock.Open, ResponseType.Accept);
@@ -205,7 +206,7 @@ namespace LinkoutGTK
 			}
 			catch (Exception exc)
 			{
-				Utils.show_error_dialog(exc, this, String.Format("Cannot open '{0}'", filename));
+				Utils.show_error_dialog(exc, this, String.Format(Catalog.GetString("Cannot open '{0}'"), filename));
 				return;
 			}
 			
@@ -239,7 +240,7 @@ namespace LinkoutGTK
 				}
 				catch (Exception exc)
 				{
-					Utils.show_error_dialog(exc, this, String.Format("Cannot load '{0}'", filename));
+					Utils.show_error_dialog(exc, this, String.Format(Catalog.GetString("Cannot load '{0}'"), filename));
 					return;
 				}
 			}
