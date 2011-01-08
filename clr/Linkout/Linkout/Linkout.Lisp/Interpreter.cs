@@ -30,6 +30,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("*").intern()] = func_mult;
 			functions[new StringAtom("+").intern()] = func_plus;
 			functions[new StringAtom("-").intern()] = func_sub;
+			functions[new StringAtom("/").intern()] = func_div;
 			functions[new StringAtom("=").intern()] = func_eq;
 			functions[new StringAtom("and").intern()] = func_and;
 			functions[new StringAtom("apply").intern()] = func_apply;
@@ -189,6 +190,33 @@ namespace Linkout.Lisp
 				return new FixedPointAtom(-result);
 			else
 				return new FixedPointAtom(result);
+		}
+		
+		public Atom func_div(Atom args, Context context)
+		{
+			long a, b;
+			
+			args = eval_args(args, context);
+			
+			Atom[] arglist = get_n_args(args, 2, "/");
+			
+			if (arglist == null)
+				return NilAtom.nil;
+			
+			try
+			{
+				a = arglist[0].get_fixedpoint();
+				b = arglist[1].get_fixedpoint();
+			}
+			catch (NotSupportedException)
+			{
+				return NilAtom.nil;
+			}
+			
+			if (b == 0)
+				return NilAtom.nil;
+			
+			return new FixedPointAtom(FixedPointAtom.divide(a, b));
 		}
 		
 		public Atom func_eq(Atom args, Context context)

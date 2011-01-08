@@ -164,8 +164,8 @@ The lot base language supports the following functions:
  * (bitwise-xor . args) Start with 0. Take the bitwise exclusive or of (car args), (car (cdr args)), (car (cdr (cdr args))), ... until one of these values is not a number. Return the result of the last exclusive or.
  * (trunc x) - Equivalent to (bitwise-and x -1)
  * (- . x) - Take x as a list of numbers. Ignore the first item that is not a number and everything that follows. If the list contains only one number, return its additive inverse. If the list contains more than one number, subtract every number starting with the second from the first. If the list contains no numbers, return nil.
- * +(/ a b) - Return the result of dividing a by b, or nil if either b or a is not a number. Round down if the result cannot be expressed exactly (rather than towards 0 as many programming languages do with integer arithmetic).
- * +(% a b) - Equivalent to (- a (* (trunc (/ a b)) b)), or the (possibly fractional) modulo of a and b, which is between b and 0 (unlike in many programming languages).
+ * (/ a b) - Return the result of dividing a by b, or nil if either b or a is not a number. Round down if the result cannot be expressed exactly (rather than towards 0 as many programming languages do with integer arithmetic). Return nil if b is exactly 0.
+ * +(% a b) - Equivalent to (- a (* (trunc (/ a b)) b)), or the (possibly fractional) modulo of a and b, which is between b and 0 (unlike in many programming languages). Return nil if b is exactly 0.
  * (= a b) - Return 1 if a is equal to b, 0 otherwise.
  * +(< a b) - Return 1 if a is less than b, 0 otherwise. When two items of differing type are compared, they are ordered nil < number < string < cons. Strings are compared by the numerical value at each index. If a string X is longer than string Y but all values in X equal the corresponding values in Y (X starts with Y), X < Y. A cons X is less than a cons Y if and only if (or (< (car X) (car Y)) (and (= (car X) (car Y)) (< (cdr X) (cdr Y)))).
  * +(> a b) - Return 1 if a is greater than b, 0 otherwise. This is equivalent to (not (or (= a b) (< a b))) but may be implemented differently.
