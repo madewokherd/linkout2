@@ -253,7 +253,6 @@ namespace LinkoutGTK
 		private void draw_current_frame()
 		{
 			System.Drawing.Graphics g = Gtk.DotNet.Graphics.FromDrawable(this.drawingarea.GdkWindow);
-			RectangleF game_region;
 			RectangleF output_region;
 			int width;
 			int height;
@@ -263,10 +262,9 @@ namespace LinkoutGTK
 				width = this.drawingarea.Allocation.Size.Width;
 				height = this.drawingarea.Allocation.Size.Height;
 				
-				game_region = new RectangleF(0, 0, width, height);
 				output_region = new RectangleF(0, 0, width, height);
 				
-				drawing.DrawFrame(g, scripthost.frame, game_region, output_region);
+				drawing.DrawFrameAt(g, scripthost.frame, output_region);
 			}
 			finally
 			{

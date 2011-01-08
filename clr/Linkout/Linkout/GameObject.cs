@@ -112,6 +112,8 @@ namespace Linkout
 		
 		public abstract Atom[] check_rectangle(int x, int y, int width, int height);
 		
+		public abstract void get_exact_bounds(out int left, out int top, out int right, out int bottom);
+		
 		protected int get_base_hash()
 		{
 			int result=0;

@@ -104,6 +104,82 @@ namespace LinkoutDrawing
 				graphics.Restore(prev_state);
 			}
 		}
+		
+		public virtual RectangleF GetDefaultDrawRegion(Frame frame)
+		{
+			bool found_any_object = false;
+			int res_left=0, res_top=0, res_right=0, res_bottom=0;
+			
+			foreach (GameObject g in frame)
+			{
+				int left, top, right, bottom;
+				
+				g.get_exact_bounds(out left, out top, out right, out bottom);
+
+				if (right <= left || bottom <= top)
+					continue;
+				
+				if (found_any_object)
+				{
+					if (left < res_left)
+						res_left = left;
+					if (top < res_top)
+						res_top = top;
+					if (right > res_right)
+						res_right = right;
+					if (bottom > res_bottom)
+						res_bottom = bottom;
+				}
+				else
+				{
+					res_left = left;
+					res_top = top;
+					res_right = right;
+					res_bottom = bottom;
+					found_any_object = true;
+				}
+			}
+			
+			if (found_any_object)
+			{
+				return new RectangleF(res_left, res_top, res_right-res_left, res_bottom-res_top);
+			}
+			else
+			{
+				return new RectangleF(0, 0, 1, 1);
+			}
+		}
+		
+		public virtual void DrawFrameAt(Graphics graphics, Frame frame, RectangleF output_region)
+		{
+			RectangleF game_region = GetDefaultDrawRegion(frame);
+			RectangleF real_output_region;
+			float output_width, output_height;
+			
+			float x_scale=1, y_scale=1, scale=1;
+			
+			x_scale = output_region.Width / game_region.Width;
+			y_scale = output_region.Height / game_region.Height;
+			
+			if (x_scale < y_scale)
+				scale = x_scale;
+			else
+				scale = y_scale;
+			
+			output_width = game_region.Width * scale;
+			output_height = game_region.Height * scale;
+			
+			if (scale < 2.0)
+				graphics.SmoothingMode = SmoothingMode.AntiAlias;
+			
+			// Center the scaled output on the given region.
+			real_output_region = new RectangleF(output_region.X + (output_region.Width - output_width)/2,
+			                                    output_region.Y + (output_region.Height - output_height)/2,
+			                                    output_width,
+			                                    output_height);
+			
+			DrawFrame(graphics, frame, game_region, real_output_region);
+		}
 	}
 }
 

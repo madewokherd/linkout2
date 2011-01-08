@@ -80,6 +80,29 @@ namespace Linkout
 			}
 		}
 		
+		public override void get_exact_bounds(out int left, out int top, out int right, out int bottom)
+		{
+			int width;
+			int height;
+			try
+			{
+				left = (int)(getattr(x_atom).get_fixedpoint() >> 16);
+				top = (int)(getattr(y_atom).get_fixedpoint() >> 16);
+				width = (int)(getattr(width_atom).get_fixedpoint() >> 16);
+				height = (int)(getattr(height_atom).get_fixedpoint() >> 16);
+				right = left + width;
+				bottom = top + height;
+			}
+			catch (NotSupportedException)
+			{
+				// No such attribute or not a number
+				left = 0;
+				right = 0;
+				top = 0;
+				bottom = 0;
+			}
+		}
+		
 		public override int GetHashCode ()
 		{
 			return get_base_hash() ^ 0x7b68d637;
