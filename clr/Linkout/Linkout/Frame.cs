@@ -185,6 +185,7 @@ namespace Linkout
 		private void priv_advance(Frame prev_frame, Atom[] external_events)
 		{
 			LinkedListNode<GameObject> node;
+			LinkedListNode<GameObject> last_node;
 			
 			priv_frame_number += 1;
 			
@@ -204,7 +205,9 @@ namespace Linkout
 				}
 			}
 			
-			for (node = objectlist.Last; node != null; node = node.Previous)
+			last_node = objectlist.Last;
+			
+			for (node = objectlist.First; node != null; node = node.Next)
 			{
 				Atom objectid = new FixedPointAtom(node.Value.id);
 				FrameContext context = new FrameContext();
@@ -213,6 +216,9 @@ namespace Linkout
 				context.dict[new StringAtom("self")] = objectid;
 				
 				interpreter.eval(node.Value.getattr(new StringAtom("OnFrame")), context);
+				
+				if (node == last_node)
+					break;
 			}
 			
 			commit();
