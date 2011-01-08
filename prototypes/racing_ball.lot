@@ -24,29 +24,36 @@
 (box
     (x 5)
     (y 0)
-    (width 120)
-    (height 5))
+    (width 405)
+    (height 10))
 
 ; left wall
 (box
     (x 0)
     (y 5)
-    (width 5)
-    (height 90))
+    (width 10)
+    (height 205))
 
 ; bottom wall
 (box
     (x 5)
-    (y 95)
-    (width 120)
-    (height 5))
+    (y 205)
+    (width 405)
+    (height 10))
 
 ; right wall
 (box
-    (x 125)
+    (x 405)
     (y 5)
-    (width 5)
-    (height 90))
+    (width 10)
+    (height 205))
+
+; inner wall
+(box
+    (x 60)
+    (y 60)
+    (width 295)
+    (height 95))
 
 ; ball
 (box
@@ -56,15 +63,21 @@
     (height 2)
     (dx 1)
     (dy 2)
+    (thrust 0.125) ; Added speed when a button is pressed
+    (elasticity 0.5) ; Speed multiplier for when hitting walls
+    (air-friction 0.9875) ; Speed multiplier each frame
+    ; The maximum speed in a cardinal direction that we can accelerate to is equal to thrust / (1 - air-friction).
     (OnFrame (begin
-        (and (getglobal left-pressed) (setown dx (- (getown dx) 0.1)))
-        (and (getglobal right-pressed) (setown dx (+ (getown dx) 0.1)))
-        (and (getglobal up-pressed) (setown dy (- (getown dy) 0.1)))
-        (and (getglobal down-pressed) (setown dy (+ (getown dy) 0.1)))
+        (and (getglobal left-pressed) (setown dx (- (getown dx) (getown thrust))))
+        (and (getglobal right-pressed) (setown dx (+ (getown dx) (getown thrust))))
+        (and (getglobal up-pressed) (setown dy (- (getown dy) (getown thrust))))
+        (and (getglobal down-pressed) (setown dy (+ (getown dy) (getown thrust))))
         (check-rectangle (+ (getown x) (getown dx)) (getown y) (getown width) (getown height) other otherpixeltype
-            (if (= (getlocal self) (getlocal other)) () (begin (setown dx (* (- (getown dx)) 0.9)) 1)))
+            (if (= (getlocal self) (getlocal other)) () (begin (setown dy (* (getown dy) (getown elasticity))) (setown dx (* (- (getown dx)) (getown elasticity))) 1)))
         (check-rectangle (getown x) (+ (getown y) (getown dy)) (getown width) (getown height) other otherpixeltype
-            (if (= (getlocal self) (getlocal other)) () (begin (setown dy (* (- (getown dy)) 0.9)) 1)))
+            (if (= (getlocal self) (getlocal other)) () (begin (setown dx (* (getown dx) (getown elasticity))) (setown dy (* (- (getown dy)) (getown elasticity))) 1)))
+        (setown dx (* (getown dx) (getown air-friction)))
+        (setown dy (* (getown dy) (getown air-friction)))
         (setown x (+ (getown x) (getown dx)))
         (setown y (+ (getown y) (getown dy))))))
 
