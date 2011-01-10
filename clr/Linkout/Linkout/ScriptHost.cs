@@ -60,6 +60,9 @@ namespace Linkout
 		
 		public void advance_frame(Atom[] external_events)
 		{
+			if (!frame.committed)
+				commit_next_frame();
+			
 			last_frame = frame = frame.advance(external_events);
 			
 			commit_next_frame();
@@ -89,7 +92,8 @@ namespace Linkout
 			{
 				last_frame = frame = new_frame;
 			
-				commit_next_frame();
+				if (OnNewFrame != null)
+					OnNewFrame();
 			}
 			else
 			{
