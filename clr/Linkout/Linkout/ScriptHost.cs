@@ -29,6 +29,7 @@ namespace Linkout
 			functions[new StringAtom("advance").intern()] = func_advance;
 			functions[new StringAtom("frame").intern()] = func_frame;
 			functions[new StringAtom("hint").intern()] = func_hint;
+			functions[new StringAtom("in-frame").intern()] = func_in_frame;
 			functions[new StringAtom("seek-to").intern()] = func_seek_to;
 		}
 
@@ -173,6 +174,36 @@ namespace Linkout
 				OnHint(args);
 			
 			return NilAtom.nil;
+		}
+		
+		public Atom func_in_frame(Atom args, Context context)
+		{
+			Atom[] arglist = eval_n_args(args, 1, 2, "in-frame", context);
+			
+			if (arglist == null || !(arglist[0] is FixedPointAtom))
+				return NilAtom.nil;
+			
+			uint framenum = (uint)(arglist[0].get_fixedpoint() >> 16);
+			
+			Frame frame;
+			
+			if (last_frame == null)
+				return NilAtom.nil;
+			
+			if (framenum < last_frame.frame_number)
+			{
+				frame = last_frame.get_previous_frame(framenum);
+			}
+			else if (framenum == last_frame.frame_number)
+			{
+				frame = last_frame;
+			}
+			else
+			{
+				return NilAtom.nil;
+			}
+			
+			return frame.eval(arglist[1], context);
 		}
 	}
 }

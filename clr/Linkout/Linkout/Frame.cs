@@ -218,14 +218,14 @@ namespace Linkout
 			return result;
 		}
 		
-		public void eval(Atom args, Context context)
+		public Atom eval(Atom args, Context context)
 		{
 			FrameContext new_context = new FrameContext();
 			
 			context.CopyToContext(new_context);
 			new_context.frame = this;
 			
-			interpreter.eval(args, new_context);
+			return interpreter.eval(args, new_context);
 		}
 		
 		private void priv_advance(Frame prev_frame, Atom[] external_events)

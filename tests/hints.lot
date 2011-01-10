@@ -22,6 +22,8 @@
 
 (define (expect x y) (assert (= (get x) (get y))))
 
+(expect () (in-frame 0 (+ 2 2)))
+
 (frame
 
 (hint test 1)
@@ -42,4 +44,8 @@
 (expect (quot (test 1) (test 2) (test 3)) (in-frame 0 (get-hints)))
 
 (expect () (in-frame 1 (get-hints)))
+
+(expect 4 (in-frame 1 (+ 2 2)))
+
+(expect () (in-frame 5 (+ 2 2)))
 
