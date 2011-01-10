@@ -20,6 +20,11 @@
 
 (frame
 
+(box (x 0) (y 0) (width 1) (height 1))
+(box (x 31) (y 0) (width 1) (height 1))
+(box (x 0) (y 31) (width 1) (height 1))
+(box (x 31) (y 31) (width 1) (height 1))
+
 (box
     (x 5)
     (y 5)
