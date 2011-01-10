@@ -35,6 +35,9 @@ namespace Linkout
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
 			
+			priv_hints = null;
+			priv_hintlist = new List<Atom>();
+			
 			globals = new Dictionary<Atom, Atom>();
 			
 			interpreter = new FrameInterpreter();
@@ -48,6 +51,9 @@ namespace Linkout
 			priv_frame_number = original.priv_frame_number;
 			prev_frame_hash = original.GetHashCode();
 			prev_frames = original.prev_frames;
+			
+			priv_hints = null;
+			priv_hintlist = new List<Atom>();
 			
 			globals = new Dictionary<Atom, Atom>(original.globals);
 			interpreter = original.interpreter;
@@ -69,6 +75,46 @@ namespace Linkout
 		
 		internal LinkedList<GameObject> objectlist;
 		internal Dictionary<long, LinkedListNode<GameObject>> objectdict;
+		
+		private Atom priv_hints;
+		private List<Atom> priv_hintlist;
+		
+		public void add_hint(Atom hint)
+		{
+			if (priv_committed)
+				throw new InvalidOperationException("This object can no longer be modified.");
+			
+			priv_hintlist.Add(hint);
+		}
+		
+		public Atom hints
+		{
+			get
+			{
+				if (!priv_committed || priv_hints == null)
+				{
+					Atom result = NilAtom.nil;
+					int i;
+					
+					i = priv_hintlist.Count;
+					
+					while (i != 0)
+					{
+						i--;
+						result = new ConsAtom(priv_hintlist[i], result);
+					}
+					
+					if (priv_committed)
+					{
+						priv_hints = result;
+						priv_hintlist = null;
+					}
+					
+					return result;
+				}
+				return priv_hints;
+			}
+		}
 		
 		public bool committed
 		{

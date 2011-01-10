@@ -31,6 +31,7 @@ namespace Linkout
 			functions[new StringAtom("box").intern()] = func_box;
 			functions[new StringAtom("check-rectangle").intern()] = func_check_rectangle;
 			functions[new StringAtom("getown").intern()] = func_getown;
+			functions[new StringAtom("hint").intern()] = func_hint;
 			functions[new StringAtom("setown").intern()] = func_setown;
 			globals = new Dictionary<Atom, Atom>();
 			isolated = true;
@@ -142,6 +143,18 @@ namespace Linkout
 			return NilAtom.nil;
 		}
 
+		public Atom func_hint(Atom args, Context context)
+		{
+			Frame frame = ((FrameContext)context).frame;
+			
+			args = eval_args(args, context);
+			
+			if (!frame.committed)
+				frame.add_hint(args);
+			
+			return NilAtom.nil;
+		}
+		
 		public Atom func_setown(Atom args, Context context)
 		{
 			Frame frame = ((FrameContext)context).frame;
