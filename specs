@@ -216,7 +216,7 @@ Frames support the following functions:
  * +(getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc.
  * +*(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the current frame, evaluate body in the context of that frame and return the result. This can be used to inspect (but not modify) the state of previous frames. It can, however, modify the state of the current frame.
  * (hint . args) - Add args (not each argument, but the single value args) to a list of hints for the current frame. This list may be meaningful to the game script or the language implementation, or it may not.
- * +(get-hints) - Return the list of hints for the current frame, in the order in which they were added.
+ * (get-hints) - Return the list of hints for the current frame, in the order in which they were added.
 
 The following are important for frames but should be library functions:
  * +(setown name value) - Equivalent to (setattr (getlocal self) name value)

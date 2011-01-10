@@ -30,6 +30,7 @@ namespace Linkout
 		{
 			functions[new StringAtom("box").intern()] = func_box;
 			functions[new StringAtom("check-rectangle").intern()] = func_check_rectangle;
+			functions[new StringAtom("get-hints").intern()] = func_get_hints;
 			functions[new StringAtom("getown").intern()] = func_getown;
 			functions[new StringAtom("hint").intern()] = func_hint;
 			functions[new StringAtom("setown").intern()] = func_setown;
@@ -120,7 +121,16 @@ namespace Linkout
 			
 			return NilAtom.nil;
 		}
+		
+		public Atom func_get_hints(Atom args, Context context)
+		{
+			// Evaluate arguments, but ignore the result.
+			get_n_args(eval_args(args, context), 0, "get-hints");
 			
+			Frame frame = ((FrameContext)context).frame;
+			return frame.hints;
+		}
+		
 		public Atom func_getown(Atom args, Context context)
 		{
 			Frame frame = ((FrameContext)context).frame;
