@@ -118,10 +118,18 @@ namespace LinkoutConsole
 			
 			if (result == 0)
 			{
-				interpreter.frame.to_atom().write_to_stream(output);
+				atom_output.Write(interpreter.frame.to_atom());
 			}
 			
 			return result;
+		}
+		
+		public int CalculateReplay (string[] args)
+		{
+			interpreter = new ScriptHost();
+			ReplayLogger logger = new ReplayLogger(interpreter, atom_output);
+			
+			return Execute(args, interpreter);
 		}
 		
 		public int Trace (string[] args)
@@ -176,7 +184,9 @@ namespace LinkoutConsole
 				return Benchmark(args);
 			if (args[0] == "f")
 				return CalculateFinalFrame(args);
-			else if (args[0] == "t")
+			if (args[0] == "r")
+				return CalculateReplay(args);
+			if (args[0] == "t")
 				return Trace(args);
 			
 			return Usage();

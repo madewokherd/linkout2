@@ -52,6 +52,7 @@
     <Compile Include="FrameContext.cs" />
     <Compile Include="Linkout.Lisp\AtomWriter.cs" />
     <Compile Include="Linkout.Lisp\StreamAtomWriter.cs" />
+    <Compile Include="ReplayLogger.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
