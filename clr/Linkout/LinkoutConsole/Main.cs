@@ -45,16 +45,17 @@ namespace LinkoutConsole
 		
 		Stream input;
 		Stream output;
+		AtomWriter atom_output;
 		ScriptHost interpreter;
 		
 		private void TraceNewFrame()
 		{
-			interpreter.frame.to_atom().write_to_stream(output);
+			atom_output.Write(interpreter.frame.to_atom());
 		}
 
 		private void TraceHint(Atom args)
 		{
-			new ConsAtom(new StringAtom("hint"), args).write_to_stream(output);
+			atom_output.Write(new ConsAtom(new StringAtom("hint"), args));
 		}
 
 		public int Execute (string[] args, ScriptHost interpreter)
@@ -169,6 +170,8 @@ namespace LinkoutConsole
 			
 			output = System.Console.OpenStandardOutput();
 
+			atom_output = new StreamAtomWriter(output);
+			
 			if (args[0] == "b")
 				return Benchmark(args);
 			if (args[0] == "f")
