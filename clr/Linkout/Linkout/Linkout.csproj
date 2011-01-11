@@ -50,6 +50,8 @@
     <Compile Include="Linkout.Lisp\Context.cs" />
     <Compile Include="FrameInterpreter.cs" />
     <Compile Include="FrameContext.cs" />
+    <Compile Include="Linkout.Lisp\AtomWriter.cs" />
+    <Compile Include="Linkout.Lisp\StreamAtomWriter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
