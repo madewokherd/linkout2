@@ -57,9 +57,8 @@ namespace LinkoutConsole
 			new ConsAtom(new StringAtom("hint"), args).write_to_stream(output);
 		}
 
-		public int Execute (string[] args, System.IO.Stream input, ScriptHost interpreter)
+		public int Execute (string[] args, ScriptHost interpreter)
 		{
-			output = System.Console.OpenStandardOutput();
 			Context context = new Context();
 			
 			while (true)
@@ -73,13 +72,13 @@ namespace LinkoutConsole
 			return 0;
 		}
 		
-		public int Benchmark (string[] args, System.IO.Stream input)
+		public int Benchmark (string[] args)
 		{
 			int result;
 			
 			interpreter = new ScriptHost();
 			
-			result = Execute(args, input, interpreter);
+			result = Execute(args, interpreter);
 			
 			if (result == 0)
 			{
@@ -108,13 +107,13 @@ namespace LinkoutConsole
 			return result;
 		}
 		
-		public int CalculateFinalFrame (string[] args, System.IO.Stream input)
+		public int CalculateFinalFrame (string[] args)
 		{
 			int result;
 			
 			interpreter = new ScriptHost();
 			
-			result = Execute(args, input, interpreter);
+			result = Execute(args, interpreter);
 			
 			if (result == 0)
 			{
@@ -124,14 +123,14 @@ namespace LinkoutConsole
 			return result;
 		}
 		
-		public int Trace (string[] args, System.IO.Stream input)
+		public int Trace (string[] args)
 		{
 			interpreter = new ScriptHost();
 			
 			interpreter.OnNewFrame += TraceNewFrame;
 			interpreter.OnHint += TraceHint;
 
-			return Execute(args, input, interpreter);
+			return Execute(args, interpreter);
 		}
 		
 		public int instance_main(string[] args)
@@ -168,12 +167,14 @@ namespace LinkoutConsole
 			else if (filename != null)
 				input = System.IO.File.OpenRead(filename);
 			
+			output = System.Console.OpenStandardOutput();
+
 			if (args[0] == "b")
-				return Benchmark(args, input);
+				return Benchmark(args);
 			if (args[0] == "f")
-				return CalculateFinalFrame(args, input);
+				return CalculateFinalFrame(args);
 			else if (args[0] == "t")
-				return Trace(args, input);
+				return Trace(args);
 			
 			return Usage();
 		}
