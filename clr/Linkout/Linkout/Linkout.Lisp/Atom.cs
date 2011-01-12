@@ -41,19 +41,12 @@ namespace Linkout.Lisp
 
 		public abstract bool is_true();
 		
-		private class FoundDotException : Exception
-		{
-		}
-		
 		private static Atom get_cdr(System.IO.Stream input)
 		{
 			Atom result;
-			bool close_paren;
-			try
-			{
-				result = from_stream(input, out close_paren);
-			}
-			catch (FoundDotException)
+			bool close_paren, found_dot;
+			result = from_stream(input, out close_paren, out found_dot);
+			if (found_dot)
 			{
 				/* (x . y) */
 				result = from_stream(input, out close_paren);
@@ -193,11 +186,12 @@ namespace Linkout.Lisp
 			throw new ArgumentException("invalid syntax");
 		}
 		
-		private static Atom from_stream(System.IO.Stream input, out bool close_paren)
+		private static Atom from_stream(System.IO.Stream input, out bool close_paren, out bool found_dot)
 		{
 			int current_byte;
 			
 			close_paren = false;
+			found_dot = false;
 			
 			current_byte = input.ReadByte();
 			while (current_byte == ' ' || current_byte == '\t' || current_byte == '\r' || current_byte == '\n' || current_byte == ';')
@@ -315,27 +309,38 @@ namespace Linkout.Lisp
 			}
 			else if (current_byte == '.')
 			{
-				throw new FoundDotException();
+				found_dot = true;
+				return null;
 			}
 			
 			throw new System.ArgumentException("invalid syntax");
 		}
+
+		private static Atom from_stream(System.IO.Stream input, out bool close_paren)
+		{
+			bool found_dot;
+			Atom result;
+			
+			result = from_stream(input, out close_paren, out found_dot);
+
+			if (found_dot)
+				throw new System.ArgumentException("unexpected dot");
+			
+			return result;
+		}
 		
 		public static Atom from_stream(System.IO.Stream input)
 		{
-			bool close_paren;
+			bool close_paren, found_dot;
 			Atom result;
 			
-			try
-			{
-				result = from_stream(input, out close_paren);
-			}
-			catch (FoundDotException)
-			{
+			result = from_stream(input, out close_paren, out found_dot);
+			
+			if (found_dot)
 				throw new System.ArgumentException("unexpected dot");
-			}
 			if (close_paren)
 				throw new System.ArgumentException("unexpected closing parenthesis");
+			
 			return result;
 		}
 		
