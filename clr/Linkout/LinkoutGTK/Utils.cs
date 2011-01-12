@@ -35,7 +35,6 @@ namespace LinkoutGTK
 		public static void show_error_dialog(Exception exc, Gtk.Window parent, string primary_text)
 		{
 			string secondary_text, markup;
-			MessageDialog error_dialog;
 			
 			Console.WriteLine(exc);
 			
@@ -44,11 +43,13 @@ namespace LinkoutGTK
 			markup = string.Format("<span weight=\"bold\" size=\"larger\">{0}</span>\n\n{1}",
 			                       html_escape(primary_text), html_escape(secondary_text));
 			
-			error_dialog = new MessageDialog(parent, DialogFlags.Modal, MessageType.Error,
-			                                 ButtonsType.Ok, markup);
-			
-			error_dialog.Run();
-			error_dialog.Destroy();
+			using (MessageDialog error_dialog = new MessageDialog(parent, DialogFlags.Modal,
+			                                                      MessageType.Error,
+			                                                      ButtonsType.Ok, markup))
+			{
+				error_dialog.Run();
+				error_dialog.Destroy();
+			}
 		}
 	}
 }

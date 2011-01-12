@@ -182,20 +182,20 @@ namespace LinkoutGTK
 		
 		protected virtual void OnOpenActivated (object sender, System.EventArgs e)
 		{
-			FileChooserDialog dialog;
 			Stream infile;
 			string filename;
 			int response;
 			
-			dialog = new FileChooserDialog(Catalog.GetString("Open File"), this,
-			                               FileChooserAction.Open,
-			                               Stock.Cancel, ResponseType.Cancel,
-			                               Stock.Open, ResponseType.Accept);
-			
-			response = dialog.Run();
-			filename = dialog.Filename;
-
-			dialog.Destroy();
+			using (FileChooserDialog dialog = new FileChooserDialog(Catalog.GetString("Open File"), this,
+			                                                        FileChooserAction.Open,
+			                                                        Stock.Cancel, ResponseType.Cancel,
+			                                                        Stock.Open, ResponseType.Accept))
+			{
+				response = dialog.Run();
+				filename = dialog.Filename;
+	
+				dialog.Destroy();
+			}
 
 			if (response == (int)ResponseType.Cancel)
 				return;
@@ -246,7 +246,7 @@ namespace LinkoutGTK
 			}
 			finally
 			{
-				infile.Close();
+				infile.Dispose();
 			}
 		}
 		

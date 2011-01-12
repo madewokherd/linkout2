@@ -354,12 +354,13 @@ namespace Linkout.Lisp
 		
 		public override string ToString ()
 		{
-			System.IO.MemoryStream stream = new System.IO.MemoryStream();
 			System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding(false, false);
 			
-			to_stream(stream);
-			
-			return encoding.GetString(stream.GetBuffer());
+			using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
+			{
+				to_stream(stream);
+				return encoding.GetString(stream.GetBuffer());
+			}
 		}
 		
 		public static void pattern_match(Dictionary<Atom, Atom> names, Atom pattern, Atom atom)
