@@ -10,7 +10,7 @@ namespace Linkout.Lisp
 		
 		private System.IO.Stream priv_stream;
 		
-		System.IO.Stream stream
+		public System.IO.Stream stream
 		{
 			get
 			{
