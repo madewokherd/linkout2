@@ -127,7 +127,7 @@ namespace LinkoutConsole
 		public int CalculateReplay (string[] args)
 		{
 			interpreter = new ScriptHost();
-			ReplayLogger logger = new ReplayLogger(interpreter, atom_output);
+			new ReplayLogger(interpreter, atom_output);
 			
 			return Execute(args, interpreter);
 		}
