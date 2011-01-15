@@ -25,8 +25,8 @@ namespace LinkoutGTK
 	{
 		Nothing, // no file is open
 		Stopped, // we would normally be advancing frames but the game is paused
-		Running, // we're running the game engine
-		Replaying // playing back frames of a replay
+		Gameplay, // we're running the game engine
+		Review // playing back frames of a replay
 	}
 }
 

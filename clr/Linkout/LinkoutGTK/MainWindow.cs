@@ -114,7 +114,7 @@ namespace LinkoutGTK
 		{
 			switch (runstate)
 			{
-			case RunState.Running:
+			case RunState.Gameplay:
 				try
 				{
 					scripthost.advance_frame(get_external_events());
@@ -126,7 +126,7 @@ namespace LinkoutGTK
 				}
 				this.drawingarea.QueueDraw();
 				return true;
-			case RunState.Replaying:
+			case RunState.Review:
 				if (!scripthost.seek_to(scripthost.frame.frame_number + 1))
 				{
 					set_state(RunState.Stopped);
@@ -176,7 +176,7 @@ namespace LinkoutGTK
 				
 				if (hint_type.Equals(replay_file_atom))
 				{
-					runmode = RunMode.Replay;
+					runmode = RunMode.Review;
 				}
 			}
 		}
@@ -293,17 +293,17 @@ namespace LinkoutGTK
 					}
 					
 					if (runmode == RunMode.Unspecified)
-						runmode = RunMode.Play;
+						runmode = RunMode.Gameplay;
 					
-					if (runmode == RunMode.Play)
-						set_state(RunState.Running, 20);
+					if (runmode == RunMode.Gameplay)
+						set_state(RunState.Gameplay, 20);
 					else
 					{
 						if (scripthost.last_frame != null)
 						{
 							scripthost.seek_to(0);
 						}
-						set_state(RunState.Replaying, 20);
+						set_state(RunState.Review, 20);
 					}
 					
 					this.drawingarea.QueueDraw();
@@ -351,9 +351,9 @@ namespace LinkoutGTK
 			case RunState.Nothing:
 				this.drawingarea.GdkWindow.Clear();
 				break;
-			case RunState.Replaying:
+			case RunState.Review:
 			case RunState.Stopped:
-			case RunState.Running:
+			case RunState.Gameplay:
 				draw_current_frame();
 				break;
 			}
