@@ -375,6 +375,21 @@ namespace Linkout.Lisp
 				pattern_match(names, pattern.get_cdr(), atom.get_cdr());
 			}
 		}
+		
+		public static Atom from_array(Atom[] array)
+		{
+			int i=array.Length;
+			Atom result = NilAtom.nil;
+			
+			while (i > 0)
+			{
+				i = i - 1;
+				
+				result = new ConsAtom(array[i], result);
+			}
+			
+			return result;
+		}
 	}
 }
 

@@ -52,7 +52,7 @@ namespace Linkout
 					writer.Write(new ConsAtom(atom_seekto, new ConsAtom(new FixedPointAtom((long)(host.frame.frame_number-1) << 16), NilAtom.nil)));
 				}
 				
-				writer.Write(new ConsAtom(atom_advance, host.frame.hints));
+				writer.Write(new ConsAtom(atom_advance, Atom.from_array(host.frame.external_events)));
 				
 				next_framenum++;
 			}
