@@ -430,6 +430,37 @@ namespace LinkoutGTK
 		{
 			set_state(RunState.Rewind);
 		}
+		
+		protected virtual void OnSkipForwardActionActivated (object sender, System.EventArgs e)
+		{
+			advance();
+			set_state(RunState.Stopped);
+		}
+		
+		protected virtual void OnSkipBackwardsActionActivated (object sender, System.EventArgs e)
+		{
+			skip_backwards();
+			set_state(RunState.Stopped);
+		}
+		
+		protected virtual void OnSkipToActionActivated (object sender, System.EventArgs e)
+		{
+			if (this.scripthost == null || this.scripthost.last_frame == null)
+				return;
+			
+			using (SkipToDialog dialog = new SkipToDialog())
+			{
+				dialog.set_max_framenum(this.scripthost.last_frame.frame_number);
+				
+				if (dialog.Run() == (int)ResponseType.Ok)
+				{
+					this.scripthost.seek_to(dialog.get_framenum());
+					set_state(RunState.Stopped);
+				}
+				
+				dialog.Destroy();
+			}
+		}
 	}
 }
 	
