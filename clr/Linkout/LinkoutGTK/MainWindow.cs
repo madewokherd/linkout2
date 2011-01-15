@@ -38,6 +38,7 @@ namespace LinkoutGTK
 		{
 			Build ();
 			runstate = RunState.Nothing;
+			set_mode(RunMode.Gameplay);
 			frame_delay = 20; /* 50 frames per second */
 			
 			pressed_keys = new Dictionary<uint, bool>();
@@ -179,6 +180,21 @@ namespace LinkoutGTK
 			set_state(new_state, frame_delay);
 		}
 		
+		public void set_mode (RunMode new_mode)
+		{
+			runmode = new_mode;
+			
+			switch (new_mode)
+			{
+			case RunMode.Gameplay:
+				GameplayAction.Active = true;
+				break;
+			case RunMode.Review:
+				ReviewAction.Active = true;
+				break;
+			}
+		}
+		
 		private Atom replay_file_atom = new StringAtom("replay-file");
 		
 		public void hint (Atom args)
@@ -189,7 +205,7 @@ namespace LinkoutGTK
 				
 				if (hint_type.Equals(replay_file_atom))
 				{
-					runmode = RunMode.Review;
+					set_mode(RunMode.Review);
 				}
 			}
 		}
@@ -290,7 +306,7 @@ namespace LinkoutGTK
 					Context context = new Context();
 					drawing = new LinkoutDrawing.Drawing();
 					
-					runmode = RunMode.Unspecified;
+					set_mode(RunMode.Unspecified);
 					
 					scripthost.OnHint += hint;
 					
@@ -306,7 +322,7 @@ namespace LinkoutGTK
 					}
 					
 					if (runmode == RunMode.Unspecified)
-						runmode = RunMode.Gameplay;
+						set_mode(RunMode.Gameplay);
 					
 					set_state(RunState.Play, 20);
 					
@@ -365,6 +381,14 @@ namespace LinkoutGTK
 				draw_current_frame();
 				break;
 			}
+		}
+		
+		protected virtual void OnGuiModeChange (object sender, System.EventArgs e)
+		{
+			if (GameplayAction.Active)
+				set_mode(RunMode.Gameplay);
+			else if (ReviewAction.Active)
+				set_mode(RunMode.Review);
 		}
 	}
 }

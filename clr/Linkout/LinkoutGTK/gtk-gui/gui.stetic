@@ -8,7 +8,28 @@
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <widget-library name="../bin/Debug/LinkoutGTK.exe" internal="true" />
   </import>
-  <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="400 300">
+  <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="387 300">
+    <action-group name="ModeGroup">
+      <action id="GameplayAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Gameplay</property>
+        <property name="ShortLabel" translatable="yes">Gameplay</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+        <signal name="Changed" handler="OnGuiModeChange" />
+      </action>
+      <action id="ReviewAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Review</property>
+        <property name="ShortLabel" translatable="yes">Review</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+      </action>
+    </action-group>
     <action-group name="Default">
       <action id="LinkoutAction">
         <property name="Type">Action</property>
@@ -29,10 +50,10 @@
         <property name="StockId">gtk-quit</property>
         <signal name="Activated" handler="OnQuitClicked" />
       </action>
-      <action id="Action">
+      <action id="ModeAction">
         <property name="Type">Action</property>
-        <property name="Label" translatable="yes">-</property>
-        <property name="ShortLabel" translatable="yes">-</property>
+        <property name="Label" translatable="yes">Mode</property>
+        <property name="ShortLabel" translatable="yes">Mode</property>
       </action>
     </action-group>
     <property name="MemberName" />
@@ -50,6 +71,10 @@
                 <node type="Menuitem" action="openAction" />
                 <node type="Separator" />
                 <node type="Menuitem" action="quitAction" />
+              </node>
+              <node type="Menu" action="ModeAction">
+                <node type="Menuitem" action="GameplayAction" />
+                <node type="Menuitem" action="ReviewAction" />
               </node>
             </node>
           </widget>

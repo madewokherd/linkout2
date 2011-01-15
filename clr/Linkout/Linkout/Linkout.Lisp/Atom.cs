@@ -378,6 +378,9 @@ namespace Linkout.Lisp
 		
 		public static Atom from_array(Atom[] array)
 		{
+			if (array == null)
+				return NilAtom.nil;
+			
 			int i=array.Length;
 			Atom result = NilAtom.nil;
 			
