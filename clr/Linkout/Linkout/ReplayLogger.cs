@@ -58,7 +58,7 @@ namespace Linkout
 			}
 		}
 		
-		void Close()
+		public void Close()
 		{
 			host.OnHint -= HintHandler;
 			host.OnNewFrame -= NewFrameHandler;

@@ -47,6 +47,8 @@ namespace LinkoutGTK
 		ScriptHost scripthost;
 		LinkoutDrawing.Drawing drawing;
 		
+		ReplayLogger replay_logger;
+		
 		RunState runstate;
 		int frame_delay;
 		uint advance_timer;
@@ -180,6 +182,64 @@ namespace LinkoutGTK
 			}
 		}
 		
+		public virtual void start_replay_logging(string name_hint)
+		{
+			string replay_path, filename, basename, timestamp;
+			const string timestamp_format = "yyyy'-'MM'-'dd'T'HHmmss' '";
+			FileStream outfile = null;
+			int i = 0;
+			AtomWriter atom_writer;
+			
+			if (replay_logger != null)
+			{
+				replay_logger.Close();
+				replay_logger = null;
+			}
+			
+			replay_path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			replay_path = System.IO.Path.Combine(replay_path, "linkout");
+			replay_path = System.IO.Path.Combine(replay_path, "replays");
+			
+			System.IO.Directory.CreateDirectory(replay_path);
+			
+			timestamp = DateTime.Now.ToString(timestamp_format);
+			
+			basename = timestamp + name_hint;
+			
+			filename = System.IO.Path.Combine(replay_path, basename + ".lot");
+			
+			while (outfile == null)
+			{
+				try
+				{
+					outfile = new FileStream(filename, FileMode.CreateNew);
+				}
+				catch (IOException exc)
+				{
+					i = i + 1;
+					
+					if (i >= 32)
+					{
+						Console.WriteLine("Cannot create replay log");
+						Console.WriteLine(exc);
+						return;
+					}
+					
+					filename = System.IO.Path.Combine(replay_path, basename + "-" + i.ToString() + ".lot");
+				}
+				catch (Exception exc)
+				{
+					Console.WriteLine("Cannot create replay log");
+					Console.WriteLine(exc);
+					return;
+				}
+			}
+			
+			atom_writer = new StreamAtomWriter(outfile);
+			
+			replay_logger = new ReplayLogger(scripthost, atom_writer);
+		}
+		
 		protected virtual void OnOpenActivated (object sender, System.EventArgs e)
 		{
 			Stream infile;
@@ -221,6 +281,8 @@ namespace LinkoutGTK
 					is_replay_file = false;
 					
 					scripthost.OnHint += hint;
+					
+					start_replay_logging(System.IO.Path.GetFileNameWithoutExtension(filename));
 					
 					while (true)
 					{
