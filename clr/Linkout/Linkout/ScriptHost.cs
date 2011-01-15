@@ -37,6 +37,10 @@ namespace Linkout
 		
 		public event NewFrameEvent OnNewFrame;
 
+		public delegate void FrameChangeEvent();
+		
+		public event FrameChangeEvent OnFrameChange;
+
 		public delegate void ContentCheckFailEvent(Frame expected, string message);
 		
 		public event ContentCheckFailEvent OnContentCheckFail;
@@ -56,6 +60,8 @@ namespace Linkout
 			frame.commit();
 			if (OnNewFrame != null)
 				OnNewFrame();
+			if (OnFrameChange != null)
+				OnFrameChange();
 		}
 		
 		public void advance_frame(Atom[] external_events)
@@ -94,6 +100,8 @@ namespace Linkout
 			
 				if (OnNewFrame != null)
 					OnNewFrame();
+				if (OnFrameChange != null)
+					OnFrameChange();
 			}
 			else
 			{
@@ -136,14 +144,23 @@ namespace Linkout
 		
 		public bool seek_to(uint new_framenum)
 		{
+			if (frame.frame_number == new_framenum)
+				return true;
+			
 			if (new_framenum < last_frame.frame_number)
 			{
 				frame = last_frame.get_previous_frame(new_framenum);
+				if (OnFrameChange != null)
+					OnFrameChange();
+				
 				return true;
 			}
 			else if (new_framenum == last_frame.frame_number)
 			{
 				frame = last_frame;
+				if (OnFrameChange != null)
+					OnFrameChange();
+
 				return true;
 			}
 			else

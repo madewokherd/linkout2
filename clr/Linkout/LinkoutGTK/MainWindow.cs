@@ -112,6 +112,17 @@ namespace LinkoutGTK
 			return result.ToArray();
 		}
 
+		protected void OnFrameChange()
+		{
+			this.drawingarea.QueueDraw();
+			
+			if (scripthost == null || scripthost.frame == null)
+				return;
+			
+			this.SeekBar.SetRange(0, scripthost.last_frame.frame_number);
+			this.SeekBar.Value = (double)scripthost.frame.frame_number;
+		}
+		
 		public bool advance()
 		{
 			switch (runmode)
@@ -126,12 +137,12 @@ namespace LinkoutGTK
 					Utils.show_error_dialog(e, this, "Error running script");
 					set_state(RunState.Stopped);
 				}
-				this.drawingarea.QueueDraw();
+				
 				return true;
 			case RunMode.Review:
 				if (!scripthost.seek_to(scripthost.frame.frame_number + 1))
 					return false;
-				this.drawingarea.QueueDraw();
+				
 				return true;
 			default:
 				return false;
@@ -145,8 +156,6 @@ namespace LinkoutGTK
 			
 			if (!scripthost.seek_to(scripthost.frame.frame_number - 1))
 				return false;
-			
-			this.drawingarea.QueueDraw();
 			
 			return true;
 		}
@@ -211,6 +220,8 @@ namespace LinkoutGTK
 				ReviewAction.Active = true;
 				break;
 			}
+			
+			ReviewControls.Visible = (new_mode == RunMode.Review);
 			
 			set_state(runstate, frame_delay);
 		}
@@ -352,6 +363,8 @@ namespace LinkoutGTK
 					}
 					
 					this.drawingarea.QueueDraw();
+					
+					scripthost.OnFrameChange += OnFrameChange;
 				}
 				catch (Exception exc)
 				{
@@ -461,6 +474,17 @@ namespace LinkoutGTK
 				dialog.Destroy();
 			}
 		}
+		
+		protected virtual void OnSeekBarValueChanged (object sender, System.EventArgs e)
+		{
+			uint new_value = (uint)(SeekBar.Value+0.5);
+			
+			if (scripthost != null && scripthost.frame != null &&
+			    scripthost.frame.frame_number != new_value)
+			{
+				scripthost.seek_to(new_value);
+				set_state(RunState.Stopped);
+			}
+		}
 	}
 }
-	
