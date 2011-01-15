@@ -138,12 +138,27 @@ namespace LinkoutGTK
 			}
 		}
 		
+		public bool skip_backwards()
+		{
+			if (scripthost.frame == null)
+				return false;
+			
+			if (!scripthost.seek_to(scripthost.frame.frame_number - 1))
+				return false;
+			
+			this.drawingarea.QueueDraw();
+			
+			return true;
+		}
+		
 		bool frame_timeout()
 		{
 			switch (runstate)
 			{
 			case RunState.Play:
 				return advance();
+			case RunState.Rewind:
+				return skip_backwards();
 			case RunState.Nothing:
 			case RunState.Stopped:
 			default:
@@ -376,15 +391,13 @@ namespace LinkoutGTK
 		{
 			args.RetVal = true;
 
-			switch (runstate)
+			if (this.scripthost != null && this.scripthost.frame != null)
 			{
-			case RunState.Nothing:
-				this.drawingarea.GdkWindow.Clear();
-				break;
-			case RunState.Play:
-			case RunState.Stopped:
 				draw_current_frame();
-				break;
+			}
+			else
+			{
+				this.drawingarea.GdkWindow.Clear();
 			}
 		}
 		
@@ -411,6 +424,11 @@ namespace LinkoutGTK
 		protected virtual void OnPlayActionActivated (object sender, System.EventArgs e)
 		{
 			set_state(RunState.Play);
+		}
+		
+		protected virtual void OnRewindActionActivated (object sender, System.EventArgs e)
+		{
+			set_state(RunState.Rewind);
 		}
 	}
 }

@@ -9,6 +9,27 @@
     <widget-library name="../bin/Debug/LinkoutGTK.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="387 300">
+    <action-group name="ModeGroup">
+      <action id="GameplayAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Gameplay</property>
+        <property name="ShortLabel" translatable="yes">Gameplay</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+        <signal name="Changed" handler="OnGuiModeChange" />
+      </action>
+      <action id="ReviewAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Review</property>
+        <property name="ShortLabel" translatable="yes">Review</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+      </action>
+    </action-group>
     <action-group name="Default">
       <action id="LinkoutAction">
         <property name="Type">Action</property>
@@ -47,26 +68,11 @@
         <property name="ShortLabel" translatable="yes">Pause</property>
         <signal name="Activated" handler="OnPauseContinueActionActivated" />
       </action>
-    </action-group>
-    <action-group name="ModeGroup">
-      <action id="GameplayAction">
-        <property name="Type">Radio</property>
-        <property name="Label" translatable="yes">Gameplay</property>
-        <property name="ShortLabel" translatable="yes">Gameplay</property>
-        <property name="DrawAsRadio">False</property>
-        <property name="Active">False</property>
-        <property name="Value">0</property>
-        <property name="Group">Mode</property>
-        <signal name="Changed" handler="OnGuiModeChange" />
-      </action>
-      <action id="ReviewAction">
-        <property name="Type">Radio</property>
-        <property name="Label" translatable="yes">Review</property>
-        <property name="ShortLabel" translatable="yes">Review</property>
-        <property name="DrawAsRadio">False</property>
-        <property name="Active">False</property>
-        <property name="Value">0</property>
-        <property name="Group">Mode</property>
+      <action id="RewindAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Rewind</property>
+        <property name="ShortLabel" translatable="yes">Rewind</property>
+        <signal name="Activated" handler="OnRewindActionActivated" />
       </action>
     </action-group>
     <property name="MemberName" />
@@ -88,6 +94,7 @@
               <node type="Menu" action="ControlAction">
                 <node type="Menuitem" action="PauseContinueAction" />
                 <node type="Menuitem" action="PlayAction" />
+                <node type="Menuitem" action="RewindAction" />
                 <node type="Separator" />
                 <node type="Menuitem" action="GameplayAction" />
                 <node type="Menuitem" action="ReviewAction" />

@@ -25,7 +25,8 @@ namespace LinkoutGTK
 	{
 		Nothing, // no file is open
 		Stopped, // we would normally be advancing frames but the game is paused
-		Play // we're advancing at normal speed
+		Play, // we're advancing at normal speed
+		Rewind // we're going backwards through the frames
 	}
 }
 
