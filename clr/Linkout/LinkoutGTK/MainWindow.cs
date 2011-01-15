@@ -50,10 +50,9 @@ namespace LinkoutGTK
 		ReplayLogger replay_logger;
 		
 		RunState runstate;
+		RunMode runmode;
 		int frame_delay;
 		uint advance_timer;
-		
-		bool is_replay_file;
 		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
@@ -127,7 +126,7 @@ namespace LinkoutGTK
 				}
 				this.drawingarea.QueueDraw();
 				return true;
-			case RunState.Playing:
+			case RunState.Replaying:
 				if (!scripthost.seek_to(scripthost.frame.frame_number + 1))
 				{
 					set_state(RunState.Stopped);
@@ -177,7 +176,7 @@ namespace LinkoutGTK
 				
 				if (hint_type.Equals(replay_file_atom))
 				{
-					is_replay_file = true;
+					runmode = RunMode.Replay;
 				}
 			}
 		}
@@ -278,7 +277,7 @@ namespace LinkoutGTK
 					Context context = new Context();
 					drawing = new LinkoutDrawing.Drawing();
 					
-					is_replay_file = false;
+					runmode = RunMode.Unspecified;
 					
 					scripthost.OnHint += hint;
 					
@@ -293,10 +292,19 @@ namespace LinkoutGTK
 						scripthost.eval(atom, context);
 					}
 					
-					if (is_replay_file)
-						set_state(RunState.Playing, 20);
-					else
+					if (runmode == RunMode.Unspecified)
+						runmode = RunMode.Play;
+					
+					if (runmode == RunMode.Play)
 						set_state(RunState.Running, 20);
+					else
+					{
+						if (scripthost.last_frame != null)
+						{
+							scripthost.seek_to(0);
+						}
+						set_state(RunState.Replaying, 20);
+					}
 					
 					this.drawingarea.QueueDraw();
 				}
@@ -343,7 +351,7 @@ namespace LinkoutGTK
 			case RunState.Nothing:
 				this.drawingarea.GdkWindow.Clear();
 				break;
-			case RunState.Playing:
+			case RunState.Replaying:
 			case RunState.Stopped:
 			case RunState.Running:
 				draw_current_frame();
