@@ -110,11 +110,11 @@ namespace LinkoutGTK
 			return result.ToArray();
 		}
 
-		bool advance()
+		public bool advance()
 		{
-			switch (runstate)
+			switch (runmode)
 			{
-			case RunState.Gameplay:
+			case RunMode.Gameplay:
 				try
 				{
 					scripthost.advance_frame(get_external_events());
@@ -126,7 +126,7 @@ namespace LinkoutGTK
 				}
 				this.drawingarea.QueueDraw();
 				return true;
-			case RunState.Review:
+			case RunMode.Review:
 				if (!scripthost.seek_to(scripthost.frame.frame_number + 1))
 				{
 					set_state(RunState.Stopped);
@@ -134,6 +134,19 @@ namespace LinkoutGTK
 				}
 				this.drawingarea.QueueDraw();
 				return true;
+			default:
+				return false;
+			}
+		}
+		
+		bool frame_timeout()
+		{
+			switch (runstate)
+			{
+			case RunState.Play:
+				return advance();
+			case RunState.Nothing:
+			case RunState.Stopped:
 			default:
 				return false;
 			}
@@ -152,7 +165,7 @@ namespace LinkoutGTK
 			
 			if (frame_delay != -1 && (new_state != RunState.Nothing && new_state != RunState.Stopped))
 			{
-				advance_timer = GLib.Timeout.Add((uint)frame_delay, new TimeoutHandler(advance));
+				advance_timer = GLib.Timeout.Add((uint)frame_delay, new TimeoutHandler(frame_timeout));
 				this.frame_delay = frame_delay;
 			}
 			
@@ -295,15 +308,11 @@ namespace LinkoutGTK
 					if (runmode == RunMode.Unspecified)
 						runmode = RunMode.Gameplay;
 					
-					if (runmode == RunMode.Gameplay)
-						set_state(RunState.Gameplay, 20);
-					else
+					set_state(RunState.Play, 20);
+					
+					if (scripthost.last_frame != null && runmode == RunMode.Review)
 					{
-						if (scripthost.last_frame != null)
-						{
-							scripthost.seek_to(0);
-						}
-						set_state(RunState.Review, 20);
+						scripthost.seek_to(0);
 					}
 					
 					this.drawingarea.QueueDraw();
@@ -351,9 +360,8 @@ namespace LinkoutGTK
 			case RunState.Nothing:
 				this.drawingarea.GdkWindow.Clear();
 				break;
-			case RunState.Review:
+			case RunState.Play:
 			case RunState.Stopped:
-			case RunState.Gameplay:
 				draw_current_frame();
 				break;
 			}
