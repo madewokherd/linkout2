@@ -37,12 +37,13 @@ namespace LinkoutGTK
 		public MainWindow () : base(Gtk.WindowType.Toplevel)
 		{
 			Build ();
-			runstate = RunState.Nothing;
-			set_mode(RunMode.Gameplay);
-			frame_delay = 20; /* 50 frames per second */
-			
+
 			pressed_keys = new Dictionary<uint, bool>();
 			recently_pressed_keys = new Dictionary<uint, bool>();
+			
+			frame_delay = 20; /* 50 frames per second */
+			runstate = RunState.Nothing;
+			set_mode(RunMode.Gameplay);
 		}
 	
 		ScriptHost scripthost;
@@ -129,10 +130,7 @@ namespace LinkoutGTK
 				return true;
 			case RunMode.Review:
 				if (!scripthost.seek_to(scripthost.frame.frame_number + 1))
-				{
-					set_state(RunState.Stopped);
 					return false;
-				}
 				this.drawingarea.QueueDraw();
 				return true;
 			default:
@@ -193,6 +191,8 @@ namespace LinkoutGTK
 				ReviewAction.Active = true;
 				break;
 			}
+			
+			set_state(runstate, frame_delay);
 		}
 		
 		private Atom replay_file_atom = new StringAtom("replay-file");
