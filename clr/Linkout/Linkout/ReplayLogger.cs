@@ -57,6 +57,13 @@ namespace Linkout
 				next_framenum++;
 			}
 		}
+		
+		void Close()
+		{
+			host.OnHint -= HintHandler;
+			host.OnNewFrame -= NewFrameHandler;
+			writer.Close();
+		}
 	}
 }
 
