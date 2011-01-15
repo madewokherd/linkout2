@@ -171,6 +171,11 @@ namespace LinkoutGTK
 			recently_pressed_keys.Clear();
 			
 			runstate = new_state;
+			
+			if (runstate == RunState.Stopped)
+				PauseContinueAction.Label = PauseContinueAction.ShortLabel = Catalog.GetString("Continue");
+			else
+				PauseContinueAction.Label = PauseContinueAction.ShortLabel = Catalog.GetString("Pause");
 		}
 		
 		public void set_state (RunState new_state)
@@ -389,6 +394,23 @@ namespace LinkoutGTK
 				set_mode(RunMode.Gameplay);
 			else if (ReviewAction.Active)
 				set_mode(RunMode.Review);
+		}
+		
+		protected virtual void OnPauseContinueActionActivated (object sender, System.EventArgs e)
+		{
+			if (runstate == RunState.Stopped)
+			{
+				set_state(RunState.Play);
+			}
+			else
+			{
+				set_state(RunState.Stopped);
+			}
+		}
+		
+		protected virtual void OnPlayActionActivated (object sender, System.EventArgs e)
+		{
+			set_state(RunState.Play);
 		}
 	}
 }

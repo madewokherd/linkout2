@@ -9,6 +9,45 @@
     <widget-library name="../bin/Debug/LinkoutGTK.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="387 300">
+    <action-group name="Default">
+      <action id="LinkoutAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Linkout</property>
+        <property name="ShortLabel" translatable="yes">Linkout</property>
+      </action>
+      <action id="openAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Open</property>
+        <property name="ShortLabel" translatable="yes">Open</property>
+        <property name="StockId">gtk-open</property>
+        <signal name="Activated" handler="OnOpenActivated" />
+      </action>
+      <action id="quitAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">_Quit</property>
+        <property name="ShortLabel" translatable="yes">_Quit</property>
+        <property name="StockId">gtk-quit</property>
+        <signal name="Activated" handler="OnQuitClicked" />
+      </action>
+      <action id="ControlAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Control</property>
+        <property name="ShortLabel" translatable="yes">Control</property>
+      </action>
+      <action id="PlayAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Play</property>
+        <property name="ShortLabel" translatable="yes">Play</property>
+        <signal name="Activated" handler="OnPlayActionActivated" />
+      </action>
+      <action id="PauseContinueAction">
+        <property name="Type">Action</property>
+        <property name="Accelerator">Pause</property>
+        <property name="Label" translatable="yes">Pause</property>
+        <property name="ShortLabel" translatable="yes">Pause</property>
+        <signal name="Activated" handler="OnPauseContinueActionActivated" />
+      </action>
+    </action-group>
     <action-group name="ModeGroup">
       <action id="GameplayAction">
         <property name="Type">Radio</property>
@@ -30,32 +69,6 @@
         <property name="Group">Mode</property>
       </action>
     </action-group>
-    <action-group name="Default">
-      <action id="LinkoutAction">
-        <property name="Type">Action</property>
-        <property name="Label" translatable="yes">Linkout</property>
-        <property name="ShortLabel" translatable="yes">Linkout</property>
-      </action>
-      <action id="openAction">
-        <property name="Type">Action</property>
-        <property name="Label" translatable="yes">Open</property>
-        <property name="ShortLabel" translatable="yes">Open</property>
-        <property name="StockId">gtk-open</property>
-        <signal name="Activated" handler="OnOpenActivated" />
-      </action>
-      <action id="quitAction">
-        <property name="Type">Action</property>
-        <property name="Label" translatable="yes">_Quit</property>
-        <property name="ShortLabel" translatable="yes">_Quit</property>
-        <property name="StockId">gtk-quit</property>
-        <signal name="Activated" handler="OnQuitClicked" />
-      </action>
-      <action id="ModeAction">
-        <property name="Type">Action</property>
-        <property name="Label" translatable="yes">Mode</property>
-        <property name="ShortLabel" translatable="yes">Mode</property>
-      </action>
-    </action-group>
     <property name="MemberName" />
     <property name="Title" translatable="yes">Linkout</property>
     <property name="WindowPosition">CenterOnParent</property>
@@ -72,7 +85,10 @@
                 <node type="Separator" />
                 <node type="Menuitem" action="quitAction" />
               </node>
-              <node type="Menu" action="ModeAction">
+              <node type="Menu" action="ControlAction">
+                <node type="Menuitem" action="PauseContinueAction" />
+                <node type="Menuitem" action="PlayAction" />
+                <node type="Separator" />
                 <node type="Menuitem" action="GameplayAction" />
                 <node type="Menuitem" action="ReviewAction" />
               </node>
