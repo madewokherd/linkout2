@@ -357,7 +357,8 @@ namespace LinkoutGTK
 					
 					set_state(RunState.Play, 20);
 					
-					if (scripthost.last_frame != null && runmode == RunMode.Review)
+					if (scripthost.last_frame != null && runmode == RunMode.Review &&
+					    scripthost.last_frame.frame_number == scripthost.frame.frame_number)
 					{
 						scripthost.seek_to(0);
 					}

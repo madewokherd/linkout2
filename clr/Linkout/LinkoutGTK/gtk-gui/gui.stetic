@@ -9,6 +9,27 @@
     <widget-library name="../bin/Debug/LinkoutGTK.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="387 300">
+    <action-group name="ModeGroup">
+      <action id="GameplayAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Gameplay</property>
+        <property name="ShortLabel" translatable="yes">Gameplay</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+        <signal name="Changed" handler="OnGuiModeChange" />
+      </action>
+      <action id="ReviewAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Review</property>
+        <property name="ShortLabel" translatable="yes">Review</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+      </action>
+    </action-group>
     <action-group name="Default">
       <action id="LinkoutAction">
         <property name="Type">Action</property>
@@ -77,27 +98,6 @@
         <property name="ShortLabel" translatable="yes">Save _As</property>
         <property name="StockId">gtk-save-as</property>
         <signal name="Activated" handler="OnSaveAsActionActivated" />
-      </action>
-    </action-group>
-    <action-group name="ModeGroup">
-      <action id="GameplayAction">
-        <property name="Type">Radio</property>
-        <property name="Label" translatable="yes">Gameplay</property>
-        <property name="ShortLabel" translatable="yes">Gameplay</property>
-        <property name="DrawAsRadio">False</property>
-        <property name="Active">False</property>
-        <property name="Value">0</property>
-        <property name="Group">Mode</property>
-        <signal name="Changed" handler="OnGuiModeChange" />
-      </action>
-      <action id="ReviewAction">
-        <property name="Type">Radio</property>
-        <property name="Label" translatable="yes">Review</property>
-        <property name="ShortLabel" translatable="yes">Review</property>
-        <property name="DrawAsRadio">False</property>
-        <property name="Active">False</property>
-        <property name="Value">0</property>
-        <property name="Group">Mode</property>
       </action>
     </action-group>
     <property name="MemberName" />
