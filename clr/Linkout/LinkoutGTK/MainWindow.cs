@@ -241,6 +241,17 @@ namespace LinkoutGTK
 			}
 		}
 		
+		public virtual string get_replay_path()
+		{
+			string replay_path;
+
+			replay_path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			replay_path = System.IO.Path.Combine(replay_path, "linkout");
+			replay_path = System.IO.Path.Combine(replay_path, "replays");
+			
+			return replay_path;
+		}
+		
 		public virtual void start_replay_logging(string name_hint)
 		{
 			string replay_path, filename, basename, timestamp;
@@ -255,9 +266,7 @@ namespace LinkoutGTK
 				replay_logger = null;
 			}
 			
-			replay_path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-			replay_path = System.IO.Path.Combine(replay_path, "linkout");
-			replay_path = System.IO.Path.Combine(replay_path, "replays");
+			replay_path = get_replay_path();
 			
 			System.IO.Directory.CreateDirectory(replay_path);
 			
@@ -310,6 +319,8 @@ namespace LinkoutGTK
 			                                                        Stock.Cancel, ResponseType.Cancel,
 			                                                        Stock.Open, ResponseType.Accept))
 			{
+				dialog.AddShortcutFolder(get_replay_path());
+				
 				response = dialog.Run();
 				filename = dialog.Filename;
 	
