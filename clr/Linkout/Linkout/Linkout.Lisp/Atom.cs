@@ -393,6 +393,14 @@ namespace Linkout.Lisp
 			
 			return result;
 		}
+		
+		public Atom escape()
+		{
+			if (this is ConsAtom)
+				return new ConsAtom(new StringAtom("quot"), this);
+			else
+				return this;
+		}
 	}
 }
 

@@ -172,20 +172,35 @@ namespace Linkout
 			priv_committed = true;
 		}
 		
-		public Atom to_atom()
+		public void save_state(AtomWriter atom_writer)
 		{
-			Atom objectlistatom = NilAtom.nil;
-			LinkedListNode<GameObject> node;
+			Atom[] args = new Atom[3];
 			
-			for (node = objectlist.Last; node != null; node = node.Previous)
+			args[0] = new StringAtom("setglobal");
+			foreach (KeyValuePair<Atom, Atom> kvp in globals)
 			{
-				Atom objectatom = node.Value.to_atom();
-				objectlistatom = new ConsAtom(objectatom, objectlistatom);
+				args[1] = kvp.Key;
+				args[2] = kvp.Value.escape();
+				
+				atom_writer.Write(Atom.from_array(args));
 			}
 			
-			/* FIXME: Include frame id in the state. */
+			interpreter.save_state(atom_writer);
 			
-			return new ConsAtom(new StringAtom("frame"), objectlistatom);
+			foreach (GameObject obj in objectlist)
+			{
+				// FIXME: Include the object id's somehow?
+				atom_writer.Write(obj.to_atom());
+			}
+		}
+		
+		public Atom to_atom()
+		{
+			AtomListBuilder builder = new AtomListBuilder();
+			
+			save_state(builder);
+			
+			return new ConsAtom(new StringAtom("frame"), builder.ToAtom());
 		}
 		
 		public Frame copy()

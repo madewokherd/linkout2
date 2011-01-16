@@ -26,13 +26,16 @@ namespace Linkout
 	{
 		public ScriptHost () : base()
 		{
-			functions[new StringAtom("advance").intern()] = func_advance;
+			functions[atom_advance] = func_advance;
 			functions[new StringAtom("frame").intern()] = func_frame;
 			functions[new StringAtom("hint").intern()] = func_hint;
 			functions[new StringAtom("in-frame").intern()] = func_in_frame;
-			functions[new StringAtom("seek-to").intern()] = func_seek_to;
+			functions[atom_seek_to] = func_seek_to;
 		}
 
+		readonly Atom atom_advance = new StringAtom("advance").intern();
+		readonly Atom atom_seek_to = new StringAtom("seek-to").intern();
+		
 		public delegate void NewFrameEvent();
 		
 		public event NewFrameEvent OnNewFrame;
@@ -225,6 +228,39 @@ namespace Linkout
 			}
 			
 			return frame.eval(arglist[1], context);
+		}
+		
+		public override void save_state (AtomWriter atom_writer)
+		{
+			base.save_state(atom_writer);
+			
+			if (frame != null)
+			{
+				Frame first_frame;
+				if (frame.frame_number == 0)
+					first_frame = frame;
+				else
+					first_frame = frame.get_previous_frame(0);
+				
+				atom_writer.Write(first_frame.to_atom());
+				
+				for (uint i=1; i<last_frame.frame_number; i++)
+				{
+					Atom external_events = Atom.from_array(last_frame.get_previous_frame(i).external_events);
+					atom_writer.Write(new ConsAtom(atom_advance, external_events));
+				}
+				
+				if (last_frame.frame_number != 0)
+				{
+					Atom external_events = Atom.from_array(last_frame.external_events);
+					atom_writer.Write(new ConsAtom(atom_advance, external_events));
+				}
+				
+				if (frame.frame_number != last_frame.frame_number)
+				{
+					atom_writer.Write(new ConsAtom(atom_seek_to, new ConsAtom(new FixedPointAtom(frame.frame_number << 16), NilAtom.nil)));
+				}
+			}
 		}
 	}
 }

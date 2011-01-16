@@ -486,5 +486,50 @@ namespace LinkoutGTK
 				set_state(RunState.Stopped);
 			}
 		}
+		
+		protected virtual void OnSaveAsActionActivated (object sender, System.EventArgs e)
+		{
+			int response;
+			string filename;
+			
+			if (scripthost == null)
+				return;
+			
+			using (FileChooserDialog dialog = new FileChooserDialog(Catalog.GetString("Save File"), this,
+			                                                        FileChooserAction.Save,
+			                                                        Stock.Cancel, ResponseType.Cancel,
+			                                                        Stock.Save, ResponseType.Accept))
+			{
+				response = dialog.Run();
+				filename = dialog.Filename;
+	
+				dialog.Destroy();
+			}
+			
+			if (response != (int)ResponseType.Accept)
+				return;
+			
+			try
+			{
+				using (Stream outfile = new FileStream(filename, FileMode.CreateNew))
+				{
+					StreamAtomWriter atom_writer = new StreamAtomWriter(outfile);
+					
+					if (runmode == RunMode.Review)
+					{
+						atom_writer.Write(new ConsAtom(new StringAtom("hint"), new ConsAtom(new StringAtom("replay-file"), NilAtom.nil)));
+					}
+					
+					scripthost.save_state(atom_writer);
+					
+					atom_writer.Close();
+				}
+			}
+			catch (Exception exc)
+			{
+				Utils.show_error_dialog(exc, this, String.Format(Catalog.GetString("Cannot save '{0}'"), filename));
+				return;
+			}
+		}
 	}
 }

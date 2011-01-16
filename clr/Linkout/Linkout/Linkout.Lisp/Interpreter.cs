@@ -39,8 +39,8 @@ namespace Linkout.Lisp
 			functions[new StringAtom("bitwise-not").intern()] = func_bitwise_not;
 			functions[new StringAtom("bitwise-or").intern()] = func_bitwise_or;
 			functions[new StringAtom("bitwise-xor").intern()] = func_bitwise_xor;
-			functions[new StringAtom("define").intern()] = func_define;
-			functions[new StringAtom("defineex").intern()] = func_defineex;
+			functions[atom_define] = func_define;
+			functions[atom_defineex] = func_defineex;
 			functions[new StringAtom("delglobal").intern()] = func_delglobal;
 			functions[new StringAtom("display").intern()] = func_display;
 			functions[new StringAtom("eval").intern()] = func_eval;
@@ -54,7 +54,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("not").intern()] = func_not;
 			functions[new StringAtom("or").intern()] = func_or;
 			functions[new StringAtom("quot").intern()] = func_quot;
-			functions[new StringAtom("setglobal").intern()] = func_setglobal;
+			functions[atom_setglobal] = func_setglobal;
 			functions[new StringAtom("trunc").intern()] = func_trunc;
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
@@ -64,6 +64,10 @@ namespace Linkout.Lisp
 			isolated = false;
 		}
 
+		private readonly Atom atom_define = new StringAtom("define").intern();
+		private readonly Atom atom_defineex = new StringAtom("defineex").intern();
+		private readonly Atom atom_setglobal = new StringAtom("setglobal").intern();
+		
 		public delegate Atom LispFunction(Atom args, Context context);
 		
 		protected Dictionary<Atom, LispFunction> functions;
@@ -694,6 +698,33 @@ namespace Linkout.Lisp
 			}
 			else
 				return args;
+		}
+		
+		public virtual void save_state(AtomWriter atom_writer)
+		{
+			Atom[] args = new Atom[3];
+			
+			args[0] = atom_setglobal;
+			foreach (KeyValuePair<Atom, Atom> kvp in globals)
+			{
+				args[1] = kvp.Key;
+				args[2] = kvp.Value.escape();
+				
+				atom_writer.Write(Atom.from_array(args));
+			}
+			
+			foreach (KeyValuePair<Atom, CustomLispFunction> kvp in custom_functions)
+			{
+				if (kvp.Value.eval_args_first)
+					args[0] = atom_define;
+				else
+					args[0] = atom_defineex;
+				
+				args[1] = new ConsAtom(kvp.Key, kvp.Value.args);
+				args[2] = kvp.Value.body;
+				
+				atom_writer.Write(Atom.from_array(args));
+			}
 		}
 	}
 }
