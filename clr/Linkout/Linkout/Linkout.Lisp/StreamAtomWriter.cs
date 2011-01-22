@@ -23,6 +23,11 @@ namespace Linkout.Lisp
 			data.write_to_stream(priv_stream);
 		}
 		
+		public override void Flush ()
+		{
+			priv_stream.Flush();
+		}
+		
 		public override void Close ()
 		{
 			priv_stream.Close();

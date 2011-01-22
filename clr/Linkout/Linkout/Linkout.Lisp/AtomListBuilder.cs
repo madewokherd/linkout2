@@ -19,6 +19,10 @@ namespace Linkout.Lisp
 		public override void Close ()
 		{
 		}
+
+		public override void Flush ()
+		{
+		}
 		
 		public Atom ToAtom ()
 		{
