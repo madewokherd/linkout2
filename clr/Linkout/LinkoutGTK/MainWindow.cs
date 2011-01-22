@@ -342,6 +342,7 @@ namespace LinkoutGTK
 		protected virtual void OnOpenActivated (object sender, System.EventArgs e)
 		{
 			Stream infile;
+			AtomReader instream;
 			string filename;
 			int response;
 			
@@ -373,6 +374,8 @@ namespace LinkoutGTK
 			
 			try
 			{
+				instream = AtomReader.FromStream(infile);
+				
 				try
 				{
 					scripthost = new ScriptHost();
@@ -390,11 +393,13 @@ namespace LinkoutGTK
 					while (true)
 					{
 						Atom atom;
-						atom = Atom.from_stream(infile);
+						atom = instream.Read();
 						if (atom == null)
 							break;
 						scripthost.eval(atom, context);
 					}
+					
+					instream.Close();
 					
 					if (runmode == RunMode.Unspecified)
 						set_mode(RunMode.Gameplay);
