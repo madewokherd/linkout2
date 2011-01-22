@@ -30,7 +30,6 @@ namespace Linkout
 		{
 			priv_committed = false;
 			priv_frame_number = 0;
-			prev_frame_hash = 0;
 			prev_frames = null;
 			objectlist = new LinkedList<GameObject>();
 			objectdict = new Dictionary<long, LinkedListNode<GameObject>>();
@@ -49,7 +48,6 @@ namespace Linkout
 
 			priv_committed = false;
 			priv_frame_number = original.priv_frame_number;
-			prev_frame_hash = original.GetHashCode();
 			prev_frames = original.prev_frames;
 			
 			priv_hints = null;
@@ -137,7 +135,6 @@ namespace Linkout
 		internal Dictionary<Atom, Atom> globals;
 		
 		/* History */
-		private int prev_frame_hash;
 		private Frame[] prev_frames;
 		
 		public void add_object(GameObject obj)
@@ -329,18 +326,48 @@ namespace Linkout
 		 * but the comparison only accounts for frame contents.
 		 *
 		 * Comparing the entire history of a frame would be expensive. */
+		private int priv_hash;
+		private bool hash_calculated;
+		
 		public int frame_hash ()
 		{
 			int result=0;
+			
+			if (committed && hash_calculated)
+				return priv_hash;
 			
 			foreach (GameObject obj in objectlist)
 			{
 				result = result + obj.GetHashCode();
 			}
 			
-			result = result + (int)priv_frame_number + prev_frame_hash;
+			foreach (KeyValuePair<Atom, Atom> kvp in globals)
+			{
+				result = result + (kvp.Key.GetHashCode() * (kvp.Value.GetHashCode() + 3));
+			}
 			
-			// FIXME: Include custom functions
+			result = result + (int)priv_frame_number;
+			
+			if (priv_frame_number == 0)
+			{
+				foreach (KeyValuePair<Atom, CustomLispFunction> kvp in interpreter.custom_functions)
+				{
+					CustomLispFunction f = kvp.Value;
+					result = result + (f.name.GetHashCode() *
+					                   (f.args.GetHashCode() + (f.eval_args_first ? 5 : 3)) *
+					                   (f.body.GetHashCode() + 1));
+				}
+			}
+			else
+			{
+				result = result + get_previous_frame(priv_frame_number-1).frame_hash();
+			}
+			
+			if (committed)
+			{
+				priv_hash = result;
+				hash_calculated = true;
+			}
 			
 			return result;
 		}

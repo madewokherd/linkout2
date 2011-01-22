@@ -72,9 +72,9 @@ namespace Linkout.Lisp
 		
 		protected Dictionary<Atom, LispFunction> functions;
 
-		protected Dictionary<Atom, CustomLispFunction> custom_functions;
+		public Dictionary<Atom, CustomLispFunction> custom_functions;
 
-		protected Dictionary<Atom, Atom> globals;
+		public Dictionary<Atom, Atom> globals;
 		
 		/* If immutable is true, functions should not make changes to this object that will be visible to interpreted
 		 * code. */

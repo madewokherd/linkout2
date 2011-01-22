@@ -20,6 +20,7 @@ namespace Linkout
 		uint next_framenum = 0;
 		
 		private readonly StringAtom atom_advance = new StringAtom("advance").intern();
+		private readonly StringAtom atom_checksum = new StringAtom("checksum").intern();
 		private readonly StringAtom atom_hint = new StringAtom("hint").intern();
 		private readonly StringAtom atom_replayfile = new StringAtom("replay-file").intern();
 		private readonly StringAtom atom_reset = new StringAtom("reset").intern();
@@ -29,6 +30,10 @@ namespace Linkout
 		{
 			writer.Write(new ConsAtom(atom_hint, args));
 		}
+		
+		uint frames_since_last_checksum;
+		
+		readonly uint checksum_frequency = 256;
 		
 		void NewFrameHandler()
 		{
@@ -44,6 +49,7 @@ namespace Linkout
 				writer.Write(host.frame.to_atom());
 				
 				next_framenum = 1;
+				frames_since_last_checksum = 1;
 			}
 			else
 			{
@@ -55,6 +61,18 @@ namespace Linkout
 				writer.Write(new ConsAtom(atom_advance, Atom.from_array(host.frame.external_events)));
 				
 				next_framenum++;
+				frames_since_last_checksum++;
+			}
+
+			if (frames_since_last_checksum >= checksum_frequency)
+			{
+				Atom[] list = new Atom[3];
+				list[0] = atom_hint;
+				list[1] = atom_checksum;
+				list[2] = new FixedPointAtom((long)host.frame.frame_hash() << 16);
+				
+				writer.Write(Atom.from_array(list));
+				frames_since_last_checksum = 0;
 			}
 		}
 		
