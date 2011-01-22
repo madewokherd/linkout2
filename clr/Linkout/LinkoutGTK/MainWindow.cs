@@ -56,6 +56,8 @@ namespace LinkoutGTK
 		int frame_delay;
 		uint advance_timer;
 		
+		bool checksum_failed;
+		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
 			Application.Quit ();
@@ -226,6 +228,7 @@ namespace LinkoutGTK
 			set_state(runstate, frame_delay);
 		}
 		
+		private Atom checksum_atom = new StringAtom("checksum");
 		private Atom replay_file_atom = new StringAtom("replay-file");
 		
 		public void hint (Atom args)
@@ -237,6 +240,19 @@ namespace LinkoutGTK
 				if (hint_type.Equals(replay_file_atom))
 				{
 					set_mode(RunMode.Review);
+				}
+				else if (hint_type.Equals(checksum_atom) && !checksum_failed && scripthost != null && scripthost.frame != null)
+				{
+					if (args.get_cdr() is ConsAtom && args.get_cdr().get_car() is FixedPointAtom)
+					{
+						int checksum = (int)(args.get_cdr().get_car().get_fixedpoint() >> 16);
+						if (checksum != scripthost.frame.frame_hash())
+						{
+							checksum_failed = true;
+							/* FIXME: Show this somewhere in the GUI? */
+							System.Console.WriteLine("WARNING: Checksum failed at frame {0}", scripthost.frame.frame_number);
+						}
+					}
 				}
 			}
 		}
@@ -353,6 +369,8 @@ namespace LinkoutGTK
 					scripthost.OnHint += hint;
 					
 					start_replay_logging(System.IO.Path.GetFileNameWithoutExtension(filename));
+					
+					checksum_failed = false;
 					
 					while (true)
 					{
