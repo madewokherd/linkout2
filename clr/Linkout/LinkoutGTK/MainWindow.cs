@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using Mono.Unix;
 using GLib;
 using Gtk;
@@ -58,15 +59,26 @@ namespace LinkoutGTK
 		
 		bool checksum_failed;
 		
+		public virtual void Quit ()
+		{
+			if (replay_logger != null)
+			{
+				replay_logger.Close();
+				replay_logger = null;
+			}
+
+			Application.Quit ();
+		}
+		
 		protected void OnDeleteEvent (object sender, DeleteEventArgs a)
 		{
-			Application.Quit ();
+			Quit();
 			a.RetVal = true;
 		}
 		
 		protected virtual void OnQuitClicked (object sender, System.EventArgs e)
 		{
-			Application.Quit ();
+			Quit();
 		}
 
 		Dictionary<uint, bool> pressed_keys;
@@ -273,6 +285,7 @@ namespace LinkoutGTK
 			string replay_path, filename, basename, timestamp;
 			const string timestamp_format = "yyyy'-'MM'-'dd'T'HHmmss' '";
 			FileStream outfile = null;
+			GZipStream outstream = null;
 			int i = 0;
 			AtomWriter atom_writer;
 			
@@ -290,7 +303,7 @@ namespace LinkoutGTK
 			
 			basename = timestamp + name_hint;
 			
-			filename = System.IO.Path.Combine(replay_path, basename + ".lot");
+			filename = System.IO.Path.Combine(replay_path, basename + ".lot.gz");
 			
 			while (outfile == null)
 			{
@@ -309,7 +322,7 @@ namespace LinkoutGTK
 						return;
 					}
 					
-					filename = System.IO.Path.Combine(replay_path, basename + "-" + i.ToString() + ".lot");
+					filename = System.IO.Path.Combine(replay_path, basename + "-" + i.ToString() + ".lot.gz");
 				}
 				catch (Exception exc)
 				{
@@ -319,7 +332,9 @@ namespace LinkoutGTK
 				}
 			}
 			
-			atom_writer = new StreamAtomWriter(outfile);
+			outstream = new GZipStream(outfile, CompressionMode.Compress);
+			
+			atom_writer = new StreamAtomWriter(outstream);
 			
 			replay_logger = new ReplayLogger(scripthost, atom_writer);
 		}
