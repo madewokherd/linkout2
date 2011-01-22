@@ -1,6 +1,10 @@
 *.userprefs
 *.pidb
 bin
+obj
 generated.cs
 /clr/Linkout/LinkoutGTK/gtk-gui/LinkoutGTK.MainWindow.cs
+/clr/Linkout/LinkoutGTK/gtk-gui/LinkoutGTK.SkipToDialog.cs
+/Linkout.zip
+/REVISION
 
