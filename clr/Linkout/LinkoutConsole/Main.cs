@@ -45,6 +45,7 @@ namespace LinkoutConsole
 		
 		Stream input;
 		Stream output;
+		AtomReader atom_input;
 		AtomWriter atom_output;
 		ScriptHost interpreter;
 		
@@ -65,7 +66,7 @@ namespace LinkoutConsole
 			while (true)
 			{
 				Linkout.Lisp.Atom atom;
-				atom = Linkout.Lisp.Atom.from_stream(input);
+				atom = atom_input.Read();
 				if (atom == null)
 					break;
 				atom = interpreter.eval(atom, context);
@@ -175,6 +176,8 @@ namespace LinkoutConsole
 				input = System.Console.OpenStandardInput();
 			else if (filename != null)
 				input = System.IO.File.OpenRead(filename);
+			
+			atom_input = AtomReader.FromStream(input);
 			
 			output = System.Console.OpenStandardOutput();
 
