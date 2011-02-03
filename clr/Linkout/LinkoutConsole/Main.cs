@@ -34,6 +34,7 @@ namespace LinkoutConsole
 
 <commands>
   b: Run script at maximum speed and print out FPS.
+  c: Read atoms from the input and write them to the output.
   f: Execute a script or replay and write out the final frame
   t: Execute a script or replay and write out every frame and hint
 
@@ -107,6 +108,23 @@ namespace LinkoutConsole
 			}
 			
 			return result;
+		}
+		
+		public int Cat (string[] args)
+		{
+			while (true)
+			{
+				Linkout.Lisp.Atom atom;
+				atom = atom_input.Read();
+				if (atom == null)
+					break;
+				atom_output.Write(atom);
+			}
+			
+			atom_input.Close();
+			atom_output.Close();
+			
+			return 0;
 		}
 		
 		public int CalculateFinalFrame (string[] args)
@@ -185,6 +203,8 @@ namespace LinkoutConsole
 			
 			if (args[0] == "b")
 				return Benchmark(args);
+			if (args[0] == "c")
+				return Cat(args);
 			if (args[0] == "f")
 				return CalculateFinalFrame(args);
 			if (args[0] == "r")
