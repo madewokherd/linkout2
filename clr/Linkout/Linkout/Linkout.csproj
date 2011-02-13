@@ -57,6 +57,7 @@
     <Compile Include="Linkout.Lisp\AtomReader.cs" />
     <Compile Include="Linkout.Lisp\StreamAtomReader.cs" />
     <Compile Include="Linkout.Lisp\BinaryAtomWriter.cs" />
+    <Compile Include="Linkout.Lisp\BinaryAtomReader.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
