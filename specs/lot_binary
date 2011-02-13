@@ -1,0 +1,65 @@
+Copyright (C) 2011 by Vincent Povirk
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+This file describes a binary format used to store a stream of LOT atoms, creatively named the "Lot Binary Format".
+
+Lot binary files shall begin with the following four hex bytes: 4c 00 74 01
+
+Following the header is a series of instructions that the decoding software must follow.
+The decoding software must maintain a stack of atoms and a list of recently-used atoms, as specified below.
+Each instruction contains a single byte identifying the type, followed by the content of that instruction.
+The content's meaning and size is dependent on the type.
+
+The instruction type 00 pushes a nil atom onto the stack.
+Its contents are zero-length.
+
+The instruction type 01 pushes a fixed-point number onto the stack and adds it to the cache.
+Its contents are a 6-byte little-endian representation of the fixed-point number.
+
+The instruction type 02 pushes a string onto the stack and adds it to the cache.
+It contains a 4-byte little-endian integer length, followed by the binary contents of the string.
+The string contents must not contain a null terminator.
+
+The instruction type 03 pops two atoms from the top of the stack and uses them to create a cons.
+Its contents are zero-length.
+The more recently pushed atom is the car of the cons, and the other atom is the cdr.
+This cons is pushed onto the stack and added to the cache.
+
+The instruction type 04 pops a single atom from the stack, and "yields" it.
+In other words, the atom at the top of the stack when this instruction is encountered shall be considered part of the stream of atoms.
+The contents of this instruction are zero-length.
+
+The instruction type 05 pops a single atom from the stack and does nothing with it.
+This can be useful if an wants to use the atoms for an application-specific instruction, which cannot remove the atoms from the stack.
+
+The instruction type 06 is used to store arbitrary data that is not part of the stream of atoms.
+It contains a 4-byte little-endian integer length, followed by that number of bytes of data.
+The first four bytes of this data should be used to identify their meaning.
+
+The instruction types from 40 through 7f are reserved for application-specific purposes.
+These instructions have no (zero-length) contents.
+
+The instruction types 80 through ff add an atom from the cache to the top of the stack.
+These instructions have zero-length contents.
+Whenever an instruction of type 01, 02, or 03 is processed, an atom is added to the cache.
+The first atom added is number 80, the next is 81, etc.
+After atom number ff is added to the cache, the next atom added will replace number 80.
+
