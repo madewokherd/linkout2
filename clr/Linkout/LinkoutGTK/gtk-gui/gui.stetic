@@ -29,6 +29,16 @@
         <property name="Value">0</property>
         <property name="Group">Mode</property>
       </action>
+      <action id="EditAction">
+        <property name="Type">Radio</property>
+        <property name="Label" translatable="yes">Edit</property>
+        <property name="ShortLabel" translatable="yes">Edit</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <property name="Value">0</property>
+        <property name="Group">Mode</property>
+        <signal name="Changed" handler="OnGuiModeChange" />
+      </action>
     </action-group>
     <action-group name="Default">
       <action id="LinkoutAction">
@@ -120,6 +130,7 @@
               <node type="Menu" action="ControlAction">
                 <node type="Menuitem" action="GameplayAction" />
                 <node type="Menuitem" action="ReviewAction" />
+                <node type="Menuitem" action="EditAction" />
                 <node type="Separator" />
                 <node type="Menuitem" action="PauseContinueAction" />
                 <node type="Menuitem" action="PlayAction" />

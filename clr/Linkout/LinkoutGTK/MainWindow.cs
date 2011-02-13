@@ -233,6 +233,9 @@ namespace LinkoutGTK
 			case RunMode.Review:
 				ReviewAction.Active = true;
 				break;
+			case RunMode.Edit:
+				EditAction.Active = true;
+				break;
 			}
 			
 			ReviewControls.Visible = (new_mode == RunMode.Review);
@@ -470,6 +473,8 @@ namespace LinkoutGTK
 				set_mode(RunMode.Gameplay);
 			else if (ReviewAction.Active)
 				set_mode(RunMode.Review);
+			else if (EditAction.Active)
+				set_mode(RunMode.Edit);
 		}
 		
 		protected virtual void OnPauseContinueActionActivated (object sender, System.EventArgs e)

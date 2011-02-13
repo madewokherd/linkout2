@@ -5,7 +5,8 @@ namespace LinkoutGTK
 	{
 		Unspecified,
 		Gameplay,
-		Review
+		Review,
+		Edit
 	}
 }
 
