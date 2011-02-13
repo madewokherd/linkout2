@@ -303,7 +303,7 @@ namespace LinkoutGTK
 			
 			basename = timestamp + name_hint;
 			
-			filename = System.IO.Path.Combine(replay_path, basename + ".lot.gz");
+			filename = System.IO.Path.Combine(replay_path, basename + ".lotb.gz");
 			
 			while (outfile == null)
 			{
@@ -322,7 +322,7 @@ namespace LinkoutGTK
 						return;
 					}
 					
-					filename = System.IO.Path.Combine(replay_path, basename + "-" + i.ToString() + ".lot.gz");
+					filename = System.IO.Path.Combine(replay_path, basename + "-" + i.ToString() + ".lotb.gz");
 				}
 				catch (Exception exc)
 				{
@@ -334,7 +334,7 @@ namespace LinkoutGTK
 			
 			outstream = new GZipStream(outfile, CompressionMode.Compress);
 			
-			atom_writer = new StreamAtomWriter(outstream);
+			atom_writer = new BinaryAtomWriter(outstream);
 			
 			replay_logger = new ReplayLogger(scripthost, atom_writer);
 		}
