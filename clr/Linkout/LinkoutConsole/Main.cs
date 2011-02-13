@@ -39,6 +39,7 @@ namespace LinkoutConsole
   t: Execute a script or replay and write out every frame and hint
 
 <switches>
+  -ob: Output binary data
   -si: Read data from stdin
 ");
 			return 1;
@@ -165,6 +166,7 @@ namespace LinkoutConsole
 		{
 			int i;
 			bool stdin = false;
+			bool output_binary = false;
 			string filename = null;
 			
 			if (args.Length == 0)
@@ -174,6 +176,8 @@ namespace LinkoutConsole
 			{
 				if (args[i] == "-si")
 					stdin = true;
+				else if (args[i] == "-ob")
+					output_binary = true;
 				else if (args[i].StartsWith("-"))
 				{
 					Console.WriteLine(String.Format("linkout: invalid option %s", args[i]));
@@ -199,7 +203,14 @@ namespace LinkoutConsole
 			
 			output = System.Console.OpenStandardOutput();
 
-			atom_output = new StreamAtomWriter(output);
+			if (output_binary)
+			{
+				atom_output = new BinaryAtomWriter(output);
+			}
+			else
+			{
+				atom_output = new StreamAtomWriter(output);
+			}
 			
 			if (args[0] == "b")
 				return Benchmark(args);
