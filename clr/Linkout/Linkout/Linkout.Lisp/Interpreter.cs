@@ -56,6 +56,7 @@ namespace Linkout.Lisp
 			functions[new StringAtom("quot").intern()] = func_quot;
 			functions[atom_setglobal] = func_setglobal;
 			functions[new StringAtom("trunc").intern()] = func_trunc;
+			functions[new StringAtom("undefine").intern()] = func_undefine;
 
 			custom_functions = new Dictionary<Atom, CustomLispFunction>();
 			globals = new Dictionary<Atom, Atom>();
@@ -347,18 +348,26 @@ namespace Linkout.Lisp
 			return new FixedPointAtom(result);
 		}
 
+		public virtual void set_custom_function(Atom name, CustomLispFunction func)
+		{
+			if (immutable)
+				return;
+
+			if (func != null)
+				custom_functions[name] = func;
+			else if (custom_functions.ContainsKey(name))
+				custom_functions.Remove(name);
+		}
+		
 		private void add_custom_function(Atom args, bool eval_args_first, Context context)
 		{
 			CustomLispFunction f;
-			
-			if (immutable)
-				return;
 			
 			f = CustomLispFunction.from_args(args, eval_args_first);
 			
 			if (f != null)
 			{
-				custom_functions[f.name] = f;
+				set_custom_function(f.name, f);
 			}
 		}
 		
@@ -643,6 +652,18 @@ namespace Linkout.Lisp
 				return NilAtom.nil;
 			else
 				return new FixedPointAtom(arglist[0].get_fixedpoint() & -0x10000);
+		}
+		
+		public Atom func_undefine(Atom args, Context context)
+		{
+			args = eval_args(args, context);
+			
+			Atom[] arglist = get_n_args(args, 1, "undefine");
+			
+			if (arglist != null)
+				set_custom_function(arglist[1], null);
+			
+			return NilAtom.nil;
 		}
 
 		public Atom eval_custom(CustomLispFunction f, Atom args, Context context)

@@ -152,6 +152,7 @@ The lot base language supports the following functions:
  * (getlocal name) - Alias for get.
  * *(define (name . arglist) body) - Defines a custom function with the given name. This function overrides any builtin functions with the same name, with the exception that the behavior of functions defined as "equivalent to" some other expression is unchanged. When the function is called, arguments are first evaluated. If the arguments match the arglist, the body is evaluated with the argument names added to locals.
  * *(defineex (name . arglist) body) - Same as define, except that arguments are not evaluated when the custom function is called.
+ * (undefine name) - Deletes the custom function with the given name.
  * (display x) - Print x to standard out, followed by a newline. Always return nil.
  * (getglobal name) - Return the corresponding value in the globals dictionary, or nil if the name is missing.
  * (setglobal name value) - Set the given name in the globals dictionary to the given value. Always return nil.
