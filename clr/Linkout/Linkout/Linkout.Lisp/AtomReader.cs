@@ -29,7 +29,7 @@ namespace Linkout.Lisp
 			if (stream.Read(magic, 2, 2) != 2)
 				return StreamType.Plaintext;
 
-			if (magic[0] == 0x4c && magic[1] == 0x00 && magic[2] == 0x74 && magic[3] == 0x01)
+			if (magic[0] == 0x4c && magic[1] == 0x00 && magic[2] == 0x74 && magic[3] == 0x02)
 				return StreamType.Binary;
 			
 			return StreamType.Plaintext;

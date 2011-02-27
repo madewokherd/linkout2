@@ -7,7 +7,7 @@ namespace Linkout.Lisp
 	{
 		public BinaryAtomWriter (System.IO.Stream stream)
 		{
-			byte[] magic = {0x4c,0x00,0x74,0x01};
+			byte[] magic = {0x4c,0x00,0x74,0x02};
 			
 			priv_stream = stream;
 			cached_atoms = new Dictionary<Atom, int>();
@@ -70,7 +70,6 @@ namespace Linkout.Lisp
 					val = val >> 8;
 				}
 				Cache(data);
-				
 			}
 			else if (data is StringAtom)
 			{
@@ -89,9 +88,9 @@ namespace Linkout.Lisp
 			}
 			else if (data is ConsAtom)
 			{
-				Push(data.get_cdr());
-				Push(data.get_car());
 				priv_stream.WriteByte(0x03);
+				Push(data.get_car());
+				Push(data.get_cdr());
 				Cache(data);
 			}
 		}
@@ -99,7 +98,6 @@ namespace Linkout.Lisp
 		public override void Write (Atom data)
 		{
 			Push(data);
-			priv_stream.WriteByte(0x04);
 		}
 		
 		public override void Flush ()

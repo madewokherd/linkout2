@@ -12,20 +12,18 @@ namespace Linkout.Lisp
 			this.priv_stream = stream;
 			
 			priv_stream.Read(magic, 0, 4);
-			if (magic[0] != 0x4c || magic[1] != 0x00 || magic[2] != 0x74 || magic[3] != 0x01)
+			if (magic[0] != 0x4c || magic[1] != 0x00 || magic[2] != 0x74 || magic[3] != 0x02)
 			{
 				throw new InvalidDataException("data does not contain a Lot binary file header");
 			}
 			
 			cached_atom_list = new Atom[128];
 			next_cache_slot = 0;
-			atom_stack = new Stack<Atom>();
 		}
 		
 		System.IO.Stream priv_stream;
 		private Atom[] cached_atom_list;
 		private int next_cache_slot;
-		private Stack<Atom> atom_stack;
 		
 		public System.IO.Stream stream
 		{
@@ -45,13 +43,13 @@ namespace Linkout.Lisp
 				next_cache_slot = 0;
 		}
 		
-		private bool ProcessCommand (out Atom result)
+		private int ProcessCommand (out Atom result)
 		{
 			int type = priv_stream.ReadByte();
 			result = null;
 			
 			if (type == -1)
-				return false;
+				return -1;
 			else if (type >= 0x80)
 			{
 				Atom cached_atom = cached_atom_list[type&0x7f];
@@ -59,19 +57,25 @@ namespace Linkout.Lisp
 				if (cached_atom == null)
 					throw new InvalidDataException("Lot binary file refers to non-existent cached item");
 				
-				atom_stack.Push(cached_atom);
-				return true;
+				result = cached_atom;
+				
+				return (int)cached_atom.atomtype;
+			}
+			else if (type >= 0x60)
+			{
+				ProcessCommand(out result);
+				return type;
 			}
 			else if (type >= 0x40)
 			{
-				return true;
+				return type;
 			}
 			else
 			{
 				switch (type)
 				{
 				case 0x00: // nil
-					atom_stack.Push(NilAtom.nil);
+					result = NilAtom.nil;
 					break;
 				case 0x01: // number
 				{
@@ -93,7 +97,7 @@ namespace Linkout.Lisp
 					atom = new FixedPointAtom(num_value);
 					
 					Cache(atom);
-					atom_stack.Push(atom);
+					result = atom;
 					
 					break;
 				}
@@ -129,7 +133,7 @@ namespace Linkout.Lisp
 					atom = new StringAtom(val);
 					
 					Cache(atom);
-					atom_stack.Push(atom);
+					result = atom;
 					
 					break;
 				}
@@ -137,27 +141,24 @@ namespace Linkout.Lisp
 				{
 					Atom car, cdr, atom;
 					
-					car = atom_stack.Pop();
-					cdr = atom_stack.Pop();
+					car = NilAtom.nil;
+					cdr = NilAtom.nil;
+					
+					ProcessCommand(out car);
+					ProcessCommand(out cdr);
 					
 					atom = new ConsAtom(car, cdr);
 					
 					Cache(atom);
-					atom_stack.Push(atom);
+					result = atom;
 					
 					break;
 				}
-				case 0x04: // yield
-					result = atom_stack.Pop();
-					break;
-				case 0x05: // pop
-					atom_stack.Pop();
-					break;
 				default:
 					throw new NotImplementedException("Stream uses an unimplemented command");
 				}
 				
-				return true;
+				return type;
 			}
 		}
 		
@@ -167,7 +168,7 @@ namespace Linkout.Lisp
 			
 			do
 			{
-				if (!ProcessCommand(out result))
+				if (ProcessCommand(out result) == -1)
 					return null;
 			} while (result == null);
 			
