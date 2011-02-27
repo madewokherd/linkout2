@@ -1,0 +1,112 @@
+Design goals for level editor:
+
+* Capable of inspecting and editing any aspect of a game at any time.
+* Must be easy to learn.
+* Must be easy for developers to make it easy to use, for a particular game.
+* Saving at frame 0 is basically equivalent to making a level.
+* Do not duplicate the information in referenced libraries.
+* Undo/redo
+* Copy/paste
+
+
+
+Things I need to be able to edit:
+
+* The initial frame's objects and their attributes - should be accessible as a list or visually from a frame snapshot
+* The contents of frames after the initial frame; technically, this is a way of editing that frame's external events
+* The initial frame's globals
+* The contents of a tilemap
+* The set of functions defined
+* The input sources - these will have a name, a description for UI, a type (button, axis, or position), and possibly a default binding
+* The set of frames - this means the ability to create a new empty frame
+* The exact set of external events on a frame after the initial one; this also implies the ability to advance and seek
+* The code used to draw objects
+* "Templates" are functions used to create objects; would like to add them to a palette, and to have the ability to edit and/or copy them
+* The set of collision masks defined or imported
+* The set of images defined or imported
+* A set of "event handlers", which are functions that a frontend calls outside a frame at specific points
+* Tile templates - TBD
+* The set of libraries imported - deleting an import would mean making a new replay?
+
+
+
+We need, first of all, a concept of object selection.
+Selections need to take, at least, the following forms:
+* A single object in a frame
+* A set of objects in a frame
+* A single tile in a tilemap
+* A range of tiles in a tilemap (rectangular, though there should be no theoretical reason why we can't have another kind of set of tiles)
+
+The currently-selected object or objects should be drawn differently than normal.
+A good default might be to draw a 2x2 pixel sqaure around the corner, #808080 in XOR mode (for maximum contrast)
+
+We'll need a concept of a "hit test".
+That is, some programs may not use a linear projection of objects in 2D space, and we need those programs to be able to tell us what's really at a certain point.
+Alternatively, we could use a mapping from a point as drawn to a point in game logic space.
+
+
+A common case will probably be a tile-based background with objects in front.
+We will need the ability to select objects in front, or the entire tilemap, or individual tiles, or a range of tiles.
+
+
+The ability to zoom and move the display would be desirable.
+So would a grid, probably.
+
+
+We'll probably want a tool-based setup.
+So we'd have tools for:
+* Select objects
+* Select tiles (though for completeness we'll need to be able to edit an object's tiles separately)
+* Zoom in/out
+* Place an object, from a template
+
+
+
+Undo/redo should be connected to the concept of multiple timelines.
+Timelines were a concept introduced to deal with what happens when you do something, rewind, and do something else.
+Normally, the things you did before rewinding would be discarded.
+However, due to the way replays are logged, those things are stored in replays, but the GUI discards them as it plays back the replay.
+The idea is that, when you discard frames in this way, the GUI would create a new "timeline" while keeping the last frame of the previous timeline.
+The user could then see a list of timelines, their start time, their length, and a thumbnail of their last frame.
+
+Conceptually, editing a frame is similar to rewinding and playing something differently.
+The frame as it exists initially must be discarded and replaced by a frame with new input that includes the edits.
+This has the side-effect of discarding all future frames.
+
+Therefore, the Undo/Redo history and the set of timelines should be the same thing.
+
+Unlike previous frames, previous timelines do not require random access.
+Or rather, there's no reason to optimize for random access, since skipping to a distant timeline is an unusual action, and most people won't want to switch timelines at all.
+Also, there's quite a lot of state involved, tracked by different components.
+Therefore, the differences between one timeline and the previous timeline should be stored, instead of the full state.
+
+Tracking the difference also makes replays more sane.
+Restoring an entire timeline would result in a lot of code being written to a replay as bits of the state are overwritten.
+But applying a difference will write only the necessary actions to the replay.
+Undos will look like one or more new actions to replays.
+
+
+Copy/Paste will require some research, but an object or set of objects in the clipboard should be equal to the code used to create that object or set of objects.
+This code should probably be copied in linkout binary form.
+
+
+
+When an object is selected and the object selection tool is active, dragging the object or pressing the arrow keys should move that object.
+
+
+There should be a list of objects from in the current frame available.
+This list could be used as an alternative way to select them.
+
+
+There should be a list of attributes of selected objects.
+If multiple objects are selected, the attributes should be consolidated much like Ex Falso.
+If an attribute is the same between all objects, it should be displayed normally.
+If it's the same in all objects where it is present, it should be displayed with "Missing from N objects"
+If it's not the same on all objects, it should say "Different across N objects"
+
+
+This means we need "pads" similar to MonoDevelop.
+
+
+
+
