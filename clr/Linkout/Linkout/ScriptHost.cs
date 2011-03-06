@@ -224,7 +224,7 @@ namespace Linkout
 			if (undo_position == null)
 				throw new InvalidOperationException("No snapshots exist yet");
 			
-			UndoTo(undo_position.Next.Value);
+			RedoTo(undo_position.Next.Value);
 		}
 		
 		private void commit_next_frame()
