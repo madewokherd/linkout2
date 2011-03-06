@@ -56,6 +56,24 @@ namespace Linkout.Lisp
 		public readonly Atom body;
 		
 		public readonly bool eval_args_first;
+		
+		private readonly Atom atom_define = new StringAtom("define").intern();
+		private readonly Atom atom_defineex = new StringAtom("defineex").intern();
+
+		public Atom GetDefinition()
+		{
+			Atom[] args = new Atom[3];
+			
+			if (eval_args_first)
+				args[0] = atom_define;
+			else
+				args[0] = atom_defineex;
+			
+			args[1] = new ConsAtom(name, this.args);
+			args[2] = body;
+			
+			return Atom.from_array(args);
+		}
 	}
 }
 

@@ -418,6 +418,8 @@ namespace LinkoutGTK
 					this.drawingarea.QueueDraw();
 					
 					scripthost.OnFrameChange += OnFrameChange;
+					
+					scripthost.AddUndoSnapshot("Loaded file");
 				}
 				catch (Exception exc)
 				{
@@ -585,6 +587,16 @@ namespace LinkoutGTK
 				Utils.show_error_dialog(exc, this, String.Format(Catalog.GetString("Cannot save '{0}'"), filename));
 				return;
 			}
+		}
+		
+		protected virtual void OnUndoActionActivated (object sender, System.EventArgs e)
+		{
+			scripthost.Undo();
+		}
+		
+		protected virtual void OnRedoActionActivated (object sender, System.EventArgs e)
+		{
+			scripthost.Redo();
 		}
 	}
 }

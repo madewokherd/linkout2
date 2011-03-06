@@ -19,6 +19,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using Linkout.Lisp;
 namespace Linkout
 {
@@ -31,6 +32,7 @@ namespace Linkout
 			functions[atom_hint] = func_hint;
 			functions[new StringAtom("in-frame").intern()] = func_in_frame;
 			functions[atom_seek_to] = func_seek_to;
+			undo_history = new LinkedList<UndoSnapshot>();
 		}
 
 		readonly Atom atom_advance = new StringAtom("advance").intern();
@@ -60,6 +62,160 @@ namespace Linkout
 		public Frame last_frame;
 
 		
+		public LinkedList<UndoSnapshot> undo_history;
+		public LinkedListNode<UndoSnapshot> undo_position;
+		private bool in_undo_redo;
+		
+		public void AddUndoAction(IUndoAction action)
+		{
+			if (in_undo_redo)
+				return;
+			
+			if (undo_position != null)
+			{
+				if (!undo_position.Value.is_open)
+				{
+					UndoSnapshot snapshot = new UndoSnapshot("Actions in progress");
+					snapshot.undo_command = new UndoCommand();
+					snapshot.is_open = true;
+					
+					undo_position = undo_history.AddAfter(undo_position, snapshot);
+					while (undo_position.Next != null)
+					{
+						undo_history.Remove(undo_position.Next);
+					}
+				}
+				
+				undo_position.Value.undo_command.AppendAction(action);
+			}
+		}
+
+		public void AddUndoSnapshot(string name)
+		{
+			if (in_undo_redo)
+				return;
+			
+			if (undo_position == null)
+			{
+				/* First snapshot */
+				UndoSnapshot snapshot = new UndoSnapshot(name);
+				undo_position = undo_history.AddLast(snapshot);
+				snapshot.is_open = false;
+			}
+			else if (undo_position.Value.is_open)
+			{
+				undo_position.Value.name = name;
+				undo_position.Value.is_open = false;
+			}
+			/* else we haven't done anything since the last snapshot. */
+		}
+		
+		public void UndoTo(UndoSnapshot snapshot)
+		{
+			if (in_undo_redo)
+				throw new InvalidOperationException("Already in an undo/redo operation");
+			
+			if (undo_position == null)
+				throw new InvalidOperationException("No snapshots exist yet");
+
+			AddUndoSnapshot("Automatic snapshot");
+			
+			UndoCommand command = new UndoCommand();
+			command.PrependCommand(undo_position.Value.undo_command);
+			LinkedListNode<UndoSnapshot> cursor = undo_position.Previous;
+			
+			while (cursor != null && cursor.Value != snapshot)
+			{
+				command.PrependCommand(cursor.Value.undo_command);
+				cursor = cursor.Previous;
+			}
+			
+			in_undo_redo = true;
+			
+			try
+			{
+				Context context = new Context();
+				
+				foreach (KeyValuePair<Type, IUndoAction> kvp in command.actions)
+				{
+					Atom[] statements = kvp.Value.GetUndoCommand();
+					int i=0;
+					
+					for (i=0; i<statements.Length; i++)
+					{
+						eval(statements[i], context);
+					}
+				}
+			}
+			finally
+			{
+				in_undo_redo = false;
+			}
+		}
+		
+		public void RedoTo(UndoSnapshot snapshot)
+		{
+			if (in_undo_redo)
+				throw new InvalidOperationException("Already in an undo/redo operation");
+			
+			if (undo_position == null)
+				throw new InvalidOperationException("No snapshots exist yet");
+			
+			UndoCommand command = new UndoCommand();
+			LinkedListNode<UndoSnapshot> cursor = undo_position.Next;
+			command.AppendCommand(cursor.Value.undo_command);
+			
+			while (cursor != null && cursor.Value != snapshot)
+			{
+				cursor = cursor.Next;
+				command.AppendCommand(cursor.Value.undo_command);
+			}
+			
+			in_undo_redo = true;
+			
+			try
+			{
+				Context context = new Context();
+				
+				foreach (KeyValuePair<Type, IUndoAction> kvp in command.actions)
+				{
+					Atom[] statements = kvp.Value.GetRedoCommand();
+					int i=0;
+					
+					for (i=0; i<statements.Length; i++)
+					{
+						eval(statements[i], context);
+					}
+				}
+			}
+			finally
+			{
+				in_undo_redo = false;
+			}
+		}
+		
+		public void Undo()
+		{
+			if (in_undo_redo)
+				throw new InvalidOperationException("Already in an undo/redo operation");
+			
+			if (undo_position == null)
+				throw new InvalidOperationException("No snapshots exist yet");
+			
+			UndoTo(undo_position.Previous.Value);
+		}
+		
+		public void Redo()
+		{
+			if (in_undo_redo)
+				throw new InvalidOperationException("Already in an undo/redo operation");
+			
+			if (undo_position == null)
+				throw new InvalidOperationException("No snapshots exist yet");
+			
+			UndoTo(undo_position.Next.Value);
+		}
+		
 		private void commit_next_frame()
 		{
 			frame.commit();
@@ -71,10 +227,19 @@ namespace Linkout
 		
 		public void advance_frame(Atom[] external_events)
 		{
+			bool needs_snapshot = last_frame != frame;
+			Frame old_last_frame = last_frame;
+			uint old_seek = frame.frame_number;
+			
 			if (!frame.committed)
 				commit_next_frame();
+
+			if (needs_snapshot)
+				AddUndoSnapshot("Automatic snapshot");
 			
 			last_frame = frame = frame.advance(external_events);
+
+			AddUndoAction(new EditFrameAction(old_last_frame, old_seek, last_frame, frame.frame_number));
 			
 			commit_next_frame();
 		}
@@ -102,7 +267,9 @@ namespace Linkout
 			if (frame == null)
 			{
 				last_frame = frame = new_frame;
-			
+
+				AddUndoAction(new EditFrameAction(null, 0, last_frame, 0));
+				
 				if (OnNewFrame != null)
 					OnNewFrame();
 				if (OnFrameChange != null)
@@ -152,9 +319,14 @@ namespace Linkout
 			if (frame.frame_number == new_framenum)
 				return true;
 			
+			uint old_seek = frame.frame_number;
+			
 			if (new_framenum < last_frame.frame_number)
 			{
 				frame = last_frame.get_previous_frame(new_framenum);
+				
+				AddUndoAction(new EditFrameAction(last_frame, old_seek, last_frame, new_framenum));
+				
 				if (OnFrameChange != null)
 					OnFrameChange();
 				
@@ -163,6 +335,9 @@ namespace Linkout
 			else if (new_framenum == last_frame.frame_number)
 			{
 				frame = last_frame;
+
+				AddUndoAction(new EditFrameAction(last_frame, old_seek, last_frame, new_framenum));
+				
 				if (OnFrameChange != null)
 					OnFrameChange();
 
@@ -205,6 +380,7 @@ namespace Linkout
 		public Atom func_in_frame(Atom args, Context context)
 		{
 			Atom[] arglist = eval_n_args(args, 1, 2, "in-frame", context);
+			Atom result;
 			
 			if (arglist == null || !(arglist[0] is FixedPointAtom))
 				return NilAtom.nil;
@@ -229,7 +405,11 @@ namespace Linkout
 				return NilAtom.nil;
 			}
 			
-			return frame.eval(arglist[1], context);
+			/* FIXME: This function shouldn't be able to change state because that screws up undo. */
+
+			result = frame.eval(arglist[1], context);
+			
+			return result;
 		}
 		
 		public void save_state (AtomWriter atom_writer, int checksum_frequency)
@@ -278,6 +458,28 @@ namespace Linkout
 		public override void save_state (AtomWriter atom_writer)
 		{
 			save_state(atom_writer, 256);
+		}
+		
+		public override void set_custom_function (Atom name, CustomLispFunction func)
+		{
+			CustomLispFunction prev_func = null;
+			
+			custom_functions.TryGetValue(name, out prev_func);
+			
+			base.set_custom_function (name, func);
+			
+			AddUndoAction(new EditFunctionsAction(name, prev_func, func));
+		}
+
+		public override void set_global (Atom name, Atom val, Context context)
+		{
+			Atom prev_val = null;
+			
+			globals.TryGetValue(name, out prev_val);
+			
+			base.set_global (name, val, context);
+			
+			AddUndoAction(new EditGlobalsAction(name, prev_val, val));
 		}
 	}
 }

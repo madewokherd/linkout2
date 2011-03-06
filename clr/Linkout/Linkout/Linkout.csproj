@@ -58,6 +58,12 @@
     <Compile Include="Linkout.Lisp\StreamAtomReader.cs" />
     <Compile Include="Linkout.Lisp\BinaryAtomWriter.cs" />
     <Compile Include="Linkout.Lisp\BinaryAtomReader.cs" />
+    <Compile Include="IUndoAction.cs" />
+    <Compile Include="EditGlobalsAction.cs" />
+    <Compile Include="EditFunctionsAction.cs" />
+    <Compile Include="UndoCommand.cs" />
+    <Compile Include="EditFrameAction.cs" />
+    <Compile Include="UndoSnapshot.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -109,6 +109,25 @@
         <property name="StockId">gtk-save-as</property>
         <signal name="Activated" handler="OnSaveAsActionActivated" />
       </action>
+      <action id="undoAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">_Undo</property>
+        <property name="ShortLabel" translatable="yes">_Undo</property>
+        <property name="StockId">gtk-undo</property>
+        <signal name="Activated" handler="OnUndoActionActivated" />
+      </action>
+      <action id="redoAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">_Redo</property>
+        <property name="ShortLabel" translatable="yes">_Redo</property>
+        <property name="StockId">gtk-redo</property>
+        <signal name="Activated" handler="OnRedoActionActivated" />
+      </action>
+      <action id="EditMenuAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">Edit</property>
+        <property name="ShortLabel" translatable="yes">Edit</property>
+      </action>
     </action-group>
     <property name="MemberName" />
     <property name="Title" translatable="yes">Linkout</property>
@@ -126,6 +145,10 @@
                 <node type="Menuitem" action="saveAsAction" />
                 <node type="Separator" />
                 <node type="Menuitem" action="quitAction" />
+              </node>
+              <node type="Menu" action="EditMenuAction">
+                <node type="Menuitem" action="undoAction" />
+                <node type="Menuitem" action="redoAction" />
               </node>
               <node type="Menu" action="ControlAction">
                 <node type="Menuitem" action="GameplayAction" />

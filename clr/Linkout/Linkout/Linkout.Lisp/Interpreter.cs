@@ -735,16 +735,8 @@ namespace Linkout.Lisp
 			}
 			
 			foreach (KeyValuePair<Atom, CustomLispFunction> kvp in custom_functions)
-			{
-				if (kvp.Value.eval_args_first)
-					args[0] = atom_define;
-				else
-					args[0] = atom_defineex;
-				
-				args[1] = new ConsAtom(kvp.Key, kvp.Value.args);
-				args[2] = kvp.Value.body;
-				
-				atom_writer.Write(Atom.from_array(args));
+			{				
+				atom_writer.Write(kvp.Value.GetDefinition());
 			}
 		}
 	}

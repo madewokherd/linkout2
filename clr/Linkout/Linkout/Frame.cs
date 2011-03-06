@@ -317,7 +317,39 @@ namespace Linkout
 					i++;
 			}
 		}
-				
+		
+		public Frame get_common_ancestor(Frame other)
+		{
+			/* Find the most recent frame in both frames' history. */
+			Frame self = this;
+			if (self.frame_number > other.frame_number)
+				self = self.get_previous_frame(other.frame_number);
+			else if (other.frame_number > self.frame_number)
+				other = other.get_previous_frame(self.frame_number);
+
+			if (self == other)
+				return self;
+			
+			Frame result = null;
+			int i=0;
+			
+			while (i < self.prev_frames.Length)
+			{
+				if (self.prev_frames[i] == other.prev_frames[i])
+				{
+					result = self.prev_frames[i];
+					i++;
+				}
+				else
+				{
+					self = self.prev_frames[i];
+					other = other.prev_frames[i];
+				}
+			}
+			
+			return result;
+		}
+		
 		/* Frame hasing/comparison
 		 * 
 		 * We're not overriding the standard methods because these methods
