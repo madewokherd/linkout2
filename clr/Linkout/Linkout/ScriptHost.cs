@@ -28,6 +28,7 @@ namespace Linkout
 		public ScriptHost () : base()
 		{
 			functions[atom_advance] = func_advance;
+			functions[new StringAtom("discard-frames").intern()] = func_discard_frames;
 			functions[new StringAtom("frame").intern()] = func_frame;
 			functions[atom_hint] = func_hint;
 			functions[new StringAtom("in-frame").intern()] = func_in_frame;
@@ -261,6 +262,40 @@ namespace Linkout
 			advance_frame(null);
 		}
 		
+		public Atom func_discard_frames(Atom args, Context context)
+		{
+			args = eval_args(args, context);
+			
+			Atom[] arglist = get_n_args(args, 1, "discard-frames");
+
+			if (arglist == null || !(arglist[0] is FixedPointAtom) || last_frame == null)
+				return NilAtom.nil;
+			
+			uint framenum = (uint)(((FixedPointAtom)arglist[0]).int_value >> 16);
+			
+			if (framenum >= last_frame.frame_number)
+				return NilAtom.nil;
+			
+			Frame new_last_frame = last_frame.get_previous_frame(framenum);
+			
+			Frame old_last_frame = last_frame;
+			uint old_seek = frame.frame_number;
+			
+			last_frame = new_last_frame;
+			
+			if (frame.frame_number > framenum)
+				frame = last_frame;
+			
+			AddUndoSnapshot(null);
+			AddUndoAction(new EditFrameAction(old_last_frame, old_seek, last_frame, frame.frame_number));
+			NameCurrentSnapshot("Discard frames");
+			
+			if (OnFrameChange != null)
+				OnFrameChange();
+			
+			return NilAtom.nil;
+		}
+
 		public Atom func_frame(Atom args, Context context)
 		{
 			Frame new_frame;
@@ -336,6 +371,9 @@ namespace Linkout
 			
 			frame = last_frame = null;
 			
+			if (OnFrameChange != null)
+				OnFrameChange();
+
 			return NilAtom.nil;
 		}
 		

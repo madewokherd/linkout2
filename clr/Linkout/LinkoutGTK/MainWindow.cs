@@ -130,11 +130,18 @@ namespace LinkoutGTK
 		{
 			this.drawingarea.QueueDraw();
 			
-			if (scripthost == null || scripthost.frame == null)
-				return;
-			
-			this.SeekBar.SetRange(0, scripthost.last_frame.frame_number);
-			this.SeekBar.Value = (double)scripthost.frame.frame_number;
+			if (scripthost == null || scripthost.frame == null || scripthost.last_frame.frame_number == 0)
+			{
+				this.SeekBar.SetRange(0, 1);
+				this.SeekBar.Value = 0;
+				this.SeekBar.Sensitive = false;
+			}
+			else
+			{
+				this.SeekBar.SetRange(0, scripthost.last_frame.frame_number);
+				this.SeekBar.Value = (double)scripthost.frame.frame_number;
+				this.SeekBar.Sensitive = true;
+			}
 		}
 		
 		public bool advance()
