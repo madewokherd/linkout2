@@ -98,16 +98,25 @@ namespace Linkout
 			if (undo_position == null)
 			{
 				/* First snapshot */
+				if (name == null)
+					name = "Automatic snapshot";
 				UndoSnapshot snapshot = new UndoSnapshot(name);
 				undo_position = undo_history.AddLast(snapshot);
 				snapshot.is_open = false;
 			}
 			else if (undo_position.Value.is_open)
 			{
-				undo_position.Value.name = name;
+				if (name != null)
+					undo_position.Value.name = name;
 				undo_position.Value.is_open = false;
 			}
 			/* else we haven't done anything since the last snapshot. */
+		}
+		
+		public void NameCurrentSnapshot(string name)
+		{
+			if (undo_position != null && undo_position.Value.is_open)
+				undo_position.Value.name = name;
 		}
 		
 		public void UndoTo(UndoSnapshot snapshot)
@@ -118,7 +127,7 @@ namespace Linkout
 			if (undo_position == null)
 				throw new InvalidOperationException("No snapshots exist yet");
 
-			AddUndoSnapshot("Automatic snapshot");
+			AddUndoSnapshot(null);
 			
 			UndoCommand command = new UndoCommand();
 			command.PrependCommand(undo_position.Value.undo_command);
@@ -235,11 +244,13 @@ namespace Linkout
 				commit_next_frame();
 
 			if (needs_snapshot)
-				AddUndoSnapshot("Automatic snapshot");
+				AddUndoSnapshot(null);
 			
 			last_frame = frame = frame.advance(external_events);
 
 			AddUndoAction(new EditFrameAction(old_last_frame, old_seek, last_frame, frame.frame_number));
+			
+			NameCurrentSnapshot("Gameplay");
 			
 			commit_next_frame();
 		}
