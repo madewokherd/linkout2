@@ -31,6 +31,7 @@ namespace Linkout
 			functions[new StringAtom("frame").intern()] = func_frame;
 			functions[atom_hint] = func_hint;
 			functions[new StringAtom("in-frame").intern()] = func_in_frame;
+			functions[new StringAtom("reset").intern()] = func_reset;
 			functions[atom_seek_to] = func_seek_to;
 			undo_history = new LinkedList<UndoSnapshot>();
 		}
@@ -321,6 +322,19 @@ namespace Linkout
 			}
 
 			advance_frame(external_events);
+			
+			return NilAtom.nil;
+		}
+		
+		public Atom func_reset(Atom args, Context context)
+		{
+			args = eval_args(args, context);
+			
+			AddUndoSnapshot(null);
+			
+			AddUndoAction(new EditFrameAction(last_frame, frame.frame_number, null, 0));
+			
+			frame = last_frame = null;
 			
 			return NilAtom.nil;
 		}

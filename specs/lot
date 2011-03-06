@@ -184,7 +184,7 @@ Game scripts support the following functions:
  * *(frame . expressions) - Create an empty frame, then evaluate (begin . expressions) in that frame. If there is a current frame, do nothing (an implementaion may warn if the frame states do not match). The frame inherits all user-defined functions and masks that exist at the time it is created.
  * +(advance) - Calculate the next frame (including any external events, from the script or the implementation), then set it as the current frame. This locks both the old and new frame so that they cannot be modified.
  * (seek-to n) - Find the nth frame and set it to the current frame. When seeking backwards, frames are not discarded until some other function sets the current frame. Thus it is possible to seek forwards.
- * +(reset) - Discard all frames.
+ * (reset) - Discard all frames.
  * +(discard-frames n) - Discard all frames numbered greater than n.
  * +(getframenum) - Return the number of the current frame. The first frame is frame 0, second is frame 1, etc. If there is no curent frame, return nil.
  * *(in-frame num body) - Evaluate num. If num is nonzero and less than or equal to the number of the latest calculated frame, evaluate body in the context of that frame and return the result. This can modify the state of the first frame if the first frame has not yet been locked.
