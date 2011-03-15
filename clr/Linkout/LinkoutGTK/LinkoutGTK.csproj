@@ -63,6 +63,9 @@
       <Package>gtk-dotnet-2.0</Package>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="Nini, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c9892194e1b9ec1b">
+      <Package>nini-1.1</Package>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">
@@ -91,5 +94,10 @@
       <Project>{A6B91E2D-9287-47EB-8F7D-3351C4591953}</Project>
       <Name>LinkoutDrawing</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="linkout.ini">
+      <DeployService-Deploy>true</DeployService-Deploy>
+    </None>
   </ItemGroup>
 </Project>

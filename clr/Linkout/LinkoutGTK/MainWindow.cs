@@ -27,6 +27,7 @@ using Mono.Unix;
 using GLib;
 using Gtk;
 using Gtk.DotNet;
+using Nini.Config;
 using Linkout;
 using Linkout.Lisp;
 using LinkoutDrawing;
@@ -66,7 +67,7 @@ namespace LinkoutGTK
 				replay_logger.Close();
 				replay_logger = null;
 			}
-
+			
 			Application.Quit ();
 		}
 		
@@ -228,8 +229,37 @@ namespace LinkoutGTK
 			set_state(new_state, frame_delay);
 		}
 		
+		public IConfig get_mode_section (RunMode mode)
+		{
+			string section_name = null;
+			IConfig result;
+			
+			switch (mode)
+			{
+			default:
+			case RunMode.Gameplay:
+				section_name = "GameplayMode";
+				break;
+			case RunMode.Review:
+				section_name = "ReviewMode";
+				break;
+			case RunMode.Edit:
+				section_name = "EditMode";
+				break;
+			}
+			
+			result = MainClass.Config.Configs[section_name];
+			
+			if (result == null)
+				result = MainClass.Config.AddConfig(section_name);
+			
+			return result;
+		}
+		
 		public void set_mode (RunMode new_mode)
 		{
+			IConfig section = get_mode_section(new_mode);
+			
 			runmode = new_mode;
 			
 			switch (new_mode)
@@ -245,7 +275,9 @@ namespace LinkoutGTK
 				break;
 			}
 			
-			ReviewControls.Visible = (new_mode == RunMode.Review);
+			ReviewControls.Visible = section.GetBoolean("ShowSeekbar", new_mode == RunMode.Review);
+			
+			SeekBarAction.Active = ReviewControls.Visible;
 			
 			set_state(runstate, frame_delay);
 		}
@@ -604,6 +636,15 @@ namespace LinkoutGTK
 		protected virtual void OnRedoActionActivated (object sender, System.EventArgs e)
 		{
 			scripthost.Redo();
+		}
+		
+		protected virtual void OnSeekBarActionToggled (object sender, System.EventArgs e)
+		{
+			ReviewControls.Visible = SeekBarAction.Active;
+			
+			get_mode_section(runmode).Set("ShowSeekbar", SeekBarAction.Active ? "yes" : "no");
+			
+			MainClass.SaveConfig();
 		}
 	}
 }

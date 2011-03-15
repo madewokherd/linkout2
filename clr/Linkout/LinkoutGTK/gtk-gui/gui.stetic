@@ -8,7 +8,7 @@
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <widget-library name="../bin/Debug/LinkoutGTK.exe" internal="true" />
   </import>
-  <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="387 300">
+  <widget class="Gtk.Window" id="LinkoutGTK.MainWindow" design-size="510 300">
     <action-group name="ModeGroup">
       <action id="GameplayAction">
         <property name="Type">Radio</property>
@@ -128,6 +128,19 @@
         <property name="Label" translatable="yes">Edit</property>
         <property name="ShortLabel" translatable="yes">Edit</property>
       </action>
+      <action id="ViewAction">
+        <property name="Type">Action</property>
+        <property name="Label" translatable="yes">View</property>
+        <property name="ShortLabel" translatable="yes">View</property>
+      </action>
+      <action id="SeekBarAction">
+        <property name="Type">Toggle</property>
+        <property name="Label" translatable="yes">Seek bar</property>
+        <property name="ShortLabel" translatable="yes">Seek bar</property>
+        <property name="DrawAsRadio">False</property>
+        <property name="Active">False</property>
+        <signal name="Toggled" handler="OnSeekBarActionToggled" />
+      </action>
     </action-group>
     <property name="MemberName" />
     <property name="Title" translatable="yes">Linkout</property>
@@ -146,10 +159,6 @@
                 <node type="Separator" />
                 <node type="Menuitem" action="quitAction" />
               </node>
-              <node type="Menu" action="EditMenuAction">
-                <node type="Menuitem" action="undoAction" />
-                <node type="Menuitem" action="redoAction" />
-              </node>
               <node type="Menu" action="ControlAction">
                 <node type="Menuitem" action="GameplayAction" />
                 <node type="Menuitem" action="ReviewAction" />
@@ -162,6 +171,13 @@
                 <node type="Menuitem" action="SkipToAction" />
                 <node type="Menuitem" action="SkipForwardAction" />
                 <node type="Menuitem" action="SkipBackwardsAction" />
+              </node>
+              <node type="Menu" action="EditMenuAction">
+                <node type="Menuitem" action="undoAction" />
+                <node type="Menuitem" action="redoAction" />
+              </node>
+              <node type="Menu" action="ViewAction">
+                <node type="Menuitem" action="SeekBarAction" />
               </node>
             </node>
           </widget>
