@@ -20,5 +20,5 @@ cp clr/Linkout/LinkoutGTK/obj/Release/LinkoutGTK.exe bin
 (git describe 2>/dev/null || git rev-parse HEAD) > REVISION
 
 rm -f Linkout.zip
-7z a Linkout.zip bin lgpl-2.1.txt specs tests prototypes REVISION
+7z a Linkout.zip bin gpl.txt mit.txt README specs tests prototypes REVISION
 

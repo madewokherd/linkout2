@@ -1,0 +1,105 @@
+DESCRIPTION
+
+Linkout is an interpreter for a programming language (called Lot)
+designed for creating 2D games.
+
+The end goal of this project is to provide a language that makes it easy to
+create 2D games quickly, with some advanced features such as the following:
+ * Customizable controls.
+ * An integrated level editor.
+ * Game logic that works the same regardless of the machine or interpreter on
+   which it is executed.
+ * Automatic recording of "replays" of all gameplay and level editing, which can
+   be used to later review those actions, including the entire state of the game
+   for the duration of the replay.
+
+Linkout is not yet complete, and it does not yet provide those features.
+
+
+LICENSE
+
+Linkout is licensed, as a whole, under the GNU GPL version 3 or greater,
+which should be included as gpl.txt. If not, see http://www.gnu.org/licenses.
+
+In addition, a more permissive license may be available for some parts of the
+package.
+
+The Nini library, which may be included in binary form, is available
+under the MIT license (see http://nini.sourceforge.net/license.php).
+
+All included documentation and code written in Lot is licensed under the
+MIT License. The intent is that you can write a game in Lot, using any tools
+included in Linkout, and fully control the copyright of that game and all
+of its assets.
+
+It is possible to legally distribute Linkout alongside other programs, including
+a program written in Lot, for which Linkout acts as an interpreter, without
+licensing the other programs under the GPL. This is similar to distributing
+DOSBox, a DOS interpreter licensed under the GPL, alongside a proprietary DOS
+program. Therefore, if you obtained Linkout as part of a larger package with
+another name, you may not have any rights to the other parts of that package
+under the GPL.
+
+Also, please be advised that replays as they are recorded by default include all
+information necessary to run the game in the same way in another location. That
+means that if you record a replay of a program, the replay will contain some or
+all of that program's code. If that program is proprietary, this may affect your
+rights to distribute replays.
+
+
+COMPILATION
+
+To compile Linkout, you will need MonoDevelop, GTK#, and Nini. You should open
+clr/Linkout/Linkout.sln using MonoDevelop and use it to compile the package.
+
+I have not yet included a method to install Linkout properly. I use the
+included create-package.sh to generate binaries that I expect to work on any
+system with a .NET interpreter (either Microsoft .NET or Mono) and GTK#, but
+you may have to modify it before it is useful to you. Also note that you must
+compile the program using MonoDevelop before running create-package.sh because
+only MonoDevelop is able to do some required processing of stetic files.
+
+The create-package.sh script does roughly this:
+ * Generate binary release versions of all assemblies in Linkout, and put those
+   in bin/.
+ * Add Nini.dll (compiled from the separate Nini project) and linkout.ini
+   (included) to bin/.
+ * Set the 32-bit flag on LinkoutGTK.exe. This causes Microsoft .NET on Windows
+   to always run that exe in a 32-bit process. This is necessary because GTK#
+   on Windows only functions in 32-bit.
+ * Write a string identifying this revision in Git to a file named REVISION.
+ * Add the directories named bin, specs, prototypes, and tests, and the files at
+   the top level, to a zip file.
+
+
+CONTENTS
+
+All of the code for the Linkout interpreter is included in the clr/ subdirectory
+of the source code. It is divided into the following namespaces:
+ * Linkout.Lisp: A generic library to encapsulate the non-game-specific
+   functionality of the interpreter. It was not designed to be a shared library,
+   and therefore it lacks documentation and a stable interface.
+ * Linkout: A library including the game-specific functionality of the
+   interpreter.
+ * LinkoutConsole: A simple command-line interface to the Linkout interpreter.
+ * LinkoutDrawing: A library containing code for rendering a frame using
+   System.Drawing. This will likely be deprecated and replaced with OpenGL, as
+   System.Drawing performs very poorly so far.
+ * LinkoutGTK: A GTK+ interface to the Linkout interpreter, which unlike the
+   console interface is usable for playing games.
+
+The specs/ directory contains documentation of the Lot language, for
+implementors (mostly me).
+
+The tests/ directory contains Lot code that I use to test the interpreter.
+
+The prototypes/ directory contains random Lot demos that might be possible
+to develop into a game.
+
+
+CONTACT
+
+See https://github.com/madewokherd/linkout2
+
+The author of this project is https://github.com/madewokherd
+
